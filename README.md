@@ -116,3 +116,4 @@ prisma/                    # Schema e configuração do banco
 
 Este projeto está sob a licença MIT. # kadoshDesigner
 # kadosh
+# kadosh
