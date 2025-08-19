@@ -1,0 +1,382 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * ==== ENUMS ====
+ */
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum AssetType {
+  IMAGE
+  PSD
+  AI
+  SVG
+  FONT
+  VIDEO
+  ZIP
+  OTHER
+}
+
+enum BillingPeriod {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INACTIVE
+}
+
+enum PaymentMethod {
+  CARD
+  PIX
+  BOLETO
+}
+
+enum Provider {
+  MERCADO_PAGO
+  PAGBANK
+  OTHER
+}
+
+enum OrderType {
+  SUBSCRIPTION_INITIAL
+  RENEWAL
+  ONE_OFF
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+  REFUNDED
+}
+
+enum InvoiceStatus {
+  OPEN
+  PAID
+  VOID
+  CANCELED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  REFUNDED
+  CHARGED_BACK
+}
+
+enum EntitlementSource {
+  SUBSCRIPTION
+  MANUAL
+  ORDER
+}
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+}
+
+enum OrderItemType {
+  PLAN
+  PRODUCT
+}
+
+/**
+ * ==== MODELS ====
+ */
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  cpf       String?  @unique
+  password  String?
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
+  orders        Order[]
+  entitlements  UserEntitlement[]
+  customerLinks CustomerProvider[]
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products ProductCategory[]
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?
+  status      ProductStatus @default(DRAFT)
+  isPublic    Boolean       @default(false)
+  metadata    Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  categories   ProductCategory[]
+  assets       DesignAsset[]
+  plans        PlanProduct[]
+  entitlements UserEntitlement[]
+  orderItems   OrderItem[]
+}
+
+model ProductCategory {
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
+}
+
+model DesignAsset {
+  id         String    @id @default(cuid())
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String
+  label      String?
+  uri        String
+  type       AssetType
+  sizeBytes  BigInt?
+  width      Int?
+  height     Int?
+  checksum   String?
+  previewUri String?
+  createdAt  DateTime  @default(now())
+
+  @@index([productId])
+}
+
+model Plan {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  description   String?
+  billingPeriod BillingPeriod
+  priceCents    Int
+  currency      String        @default("BRL")
+  active        Boolean       @default(true)
+  trialDays     Int           @default(0)
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  products      PlanProduct[]
+  subscriptions Subscription[]
+  orderItems    OrderItem[]
+}
+
+model PlanProduct {
+  plan      Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planId    String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+
+  @@id([planId, productId])
+  @@index([productId])
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                 String
+  plan                   Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  planId                 String
+  status                 SubscriptionStatus @default(TRIALING)
+  paymentMethod          PaymentMethod
+  provider               Provider
+  providerSubscriptionId String?
+  startAt                DateTime           @default(now())
+  currentPeriodStart     DateTime
+  currentPeriodEnd       DateTime
+  cancelAtPeriodEnd      Boolean            @default(false)
+  canceledAt             DateTime?
+  metadata               Json?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  orders       Order[]
+  entitlements UserEntitlement[]
+
+  @@unique([provider, providerSubscriptionId])
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@index([currentPeriodEnd])
+}
+
+model Order {
+  id               String        @id @default(cuid())
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  subscription     Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscriptionId   String?
+  type             OrderType
+  status           OrderStatus   @default(PENDING)
+  totalAmountCents Int
+  currency         String        @default("BRL")
+  provider         Provider
+  providerOrderId  String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  items        OrderItem[]
+  invoices     Invoice[]
+  entitlements UserEntitlement[]
+
+  @@unique([provider, providerOrderId])
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([provider])
+}
+
+model OrderItem {
+  id              String        @id @default(cuid())
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId         String
+  itemType        OrderItemType
+  planId          String?
+  productId       String?
+  quantity        Int           @default(1)
+  unitAmountCents Int
+  subtotalCents   Int
+
+  plan    Plan?    @relation(fields: [planId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([planId])
+  @@index([productId])
+}
+
+model Invoice {
+  id                String        @id @default(cuid())
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId           String
+  provider          Provider
+  status            InvoiceStatus @default(OPEN)
+  dueDate           DateTime?
+  pdfUrl            String?
+  linhaDigitavel    String?
+  pixQrCode         String?
+  pixCopiaCola      String?
+  providerInvoiceId String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  payments Payment[]
+
+  @@unique([provider, providerInvoiceId])
+  @@index([orderId])
+  @@index([status])
+  @@index([provider])
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  invoice           Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId         String
+  provider          Provider
+  method            PaymentMethod
+  status            PaymentStatus @default(PENDING)
+  amountCents       Int
+  paidAt            DateTime?
+  providerPaymentId String?
+  providerRaw       Json?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  webhookEvents WebhookEvent[]
+
+  @@unique([provider, providerPaymentId])
+  @@index([invoiceId])
+  @@index([status])
+  @@index([provider])
+}
+
+model UserEntitlement {
+  id             String            @id @default(cuid())
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  product        Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId      String
+  source         EntitlementSource
+  subscription   Subscription?     @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String?
+  order          Order?            @relation(fields: [orderId], references: [id])
+  orderId        String?
+  expiresAt      DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([userId, productId, source, subscriptionId, orderId])
+  @@index([userId])
+  @@index([productId])
+}
+
+model WebhookEvent {
+  id               String        @id @default(cuid())
+  provider         Provider
+  eventType        String
+  providerEventId  String?
+  status           WebhookStatus @default(RECEIVED)
+  signatureValid   Boolean       @default(false)
+  payloadHash      String?
+  headers          Json?
+  payload          Json
+  relatedPayment   Payment?      @relation(fields: [relatedPaymentId], references: [id])
+  relatedPaymentId String?
+  processedAt      DateTime?
+  createdAt        DateTime      @default(now())
+
+  @@unique([provider, providerEventId])
+  @@index([provider])
+  @@index([status])
+}
+
+/**
+ * (Opcional) vínculo User ↔ "customer" no gateway (reuso de cartão/billing)
+ */
+model CustomerProvider {
+  id                 String   @id @default(cuid())
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             String
+  provider           Provider
+  providerCustomerId String
+  createdAt          DateTime @default(now())
+
+  @@unique([provider, providerCustomerId])
+  @@index([userId, provider])
+}
