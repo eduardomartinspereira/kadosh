@@ -17,6 +17,7 @@ type Props = {
 export default function TransparentForm({ amount, description, publicKey }: Props) {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | 'boleto'>('card');
+  const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
 
   // Campos do cartão
@@ -26,6 +27,29 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
   const [expirationYear, setExpirationYear] = useState('');
   const [securityCode, setSecurityCode] = useState('');
   const mpRef = useRef<any>(null);
+
+  // Função para aplicar máscara do CPF
+  const formatCPF = (value: string) => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    
+    // Aplica a máscara XXX.XXX.XXX-XX
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 6) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    } else if (numbers.length <= 9) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+    } else {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
+    }
+  };
+
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const formatted = formatCPF(value);
+    setCpf(formatted);
+  };
 
   useEffect(() => {
     const inject = () =>
@@ -57,9 +81,9 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
 
     setLoading(true);
     try {
-      // Cria token do cartão (Checkout Transparente)
+      // Cria token do cartão usando os valores dos campos
       const { id: token } = await mpRef.current.fields.createCardToken({
-        cardNumber,
+        cardNumber: cardNumber.replace(/\s/g, ''),
         cardholderName,
         securityCode,
         expirationMonth,
@@ -75,6 +99,7 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
           payment_method: 'card',
           token,
           payer: {
+            email,
             identification: { type: 'CPF', number: cpf.replace(/\D/g, '') },
           },
         }),
@@ -87,9 +112,15 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
       alert(`Pagamento cartão: ${json.status}`);
       // TODO: redirecionar para página de sucesso/falha
     } catch (error: any) {
-      console.error('Erro no pagamento com cartão:', error);
+      console.error('=== ERRO DETALHADO NO PAGAMENTO ===');
+      console.error('Tipo de erro:', error?.constructor?.name || 'Desconhecido');
+      console.error('Mensagem:', error?.message || 'Sem mensagem');
+      console.error('Stack:', error?.stack || 'Sem stack');
+      console.error('Erro completo:', error);
+      console.error('=== FIM DO ERRO DETALHADO ===');
+      
       const errorMessage = error?.message || 'Erro desconhecido ao processar pagamento';
-      alert(errorMessage);
+      alert(`Erro no pagamento: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -106,6 +137,7 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
           description,
           payment_method: kind,
           payer: {
+            email,
             identification: { type: 'CPF', number: cpf.replace(/\D/g, '') },
           },
         }),
@@ -151,24 +183,29 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
         <button type="button" onClick={() => setPaymentMethod('boleto')} className={`border rounded p-2 ${paymentMethod==='boleto'?'border-primary':''}`}>Boleto</button>
       </div>
 
-      {/* Campo CPF */}
+      {/* Campo Email */}
       <input 
         className="border rounded p-2 w-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-        placeholder="CPF (somente números)" 
+        type="email"
+        placeholder="Email" 
+        value={email} 
+        onChange={e=>setEmail(e.target.value)} 
+        required 
+      />
+
+      {/* Campo CPF com máscara */}
+      <input 
+        className="border rounded p-2 w-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+        placeholder="000.000.000-00" 
         value={cpf} 
-        onChange={e=>setCpf(e.target.value)} 
+        onChange={handleCPFChange}
+        maxLength={14}
         required 
       />
 
       {paymentMethod === 'card' && (
-        <div className="space-y-2">
-          <input 
-            className="border rounded p-2 w-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-            placeholder="Número do cartão" 
-            value={cardNumber} 
-            onChange={e=>setCardNumber(e.target.value)} 
-            required 
-          />
+        <div className="space-y-3">
+          {/* Campo Nome no Cartão */}
           <input 
             className="border rounded p-2 w-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
             placeholder="Nome impresso no cartão" 
@@ -176,26 +213,51 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
             onChange={e=>setCardholderName(e.target.value)} 
             required 
           />
-          <div className="grid grid-cols-3 gap-2">
+          
+          {/* Campo Número do Cartão */}
+          <input 
+            className="border rounded p-2 w-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            placeholder="Número do cartão" 
+            value={cardNumber} 
+            onChange={e=>setCardNumber(e.target.value)} 
+            required 
+          />
+          
+          {/* Campos Data e CVV */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mês de vencimento</label>
+              <input 
+                className="border rounded p-2 w-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                placeholder="MM" 
+                value={expirationMonth} 
+                onChange={e=>setExpirationMonth(e.target.value)} 
+                maxLength={2}
+                required 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ano de vencimento</label>
+              <input 
+                className="border rounded p-2 w-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                placeholder="AA" 
+                value={expirationYear} 
+                onChange={e=>setExpirationYear(e.target.value)} 
+                maxLength={2}
+                required 
+              />
+            </div>
+          </div>
+          
+          {/* Campo CVV */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
             <input 
-              className="border rounded p-2 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-              placeholder="MM" 
-              value={expirationMonth} 
-              onChange={e=>setExpirationMonth(e.target.value)} 
-              required 
-            />
-            <input 
-              className="border rounded p-2 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-              placeholder="AAAA" 
-              value={expirationYear} 
-              onChange={e=>setExpirationYear(e.target.value)} 
-              required 
-            />
-            <input 
-              className="border rounded p-2 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+              className="border rounded p-2 w-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
               placeholder="CVV" 
               value={securityCode} 
               onChange={e=>setSecurityCode(e.target.value)} 
+              maxLength={4}
               required 
             />
           </div>
