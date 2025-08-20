@@ -17,11 +17,7 @@ type Props = {
 export default function TransparentForm({ amount, description, publicKey }: Props) {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | 'boleto'>('card');
-  const [installments, setInstallments] = useState(1);
-  const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
 
   // Campos do cartão
   const [cardNumber, setCardNumber] = useState('');
@@ -78,11 +74,7 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
           description,
           payment_method: 'card',
           token,
-          installments,
           payer: {
-            email,
-            first_name: firstName,
-            last_name: lastName,
             identification: { type: 'CPF', number: cpf.replace(/\D/g, '') },
           },
         }),
@@ -114,9 +106,6 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
           description,
           payment_method: kind,
           payer: {
-            email,
-            first_name: firstName,
-            last_name: lastName,
             identification: { type: 'CPF', number: cpf.replace(/\D/g, '') },
           },
         }),
@@ -162,26 +151,53 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
         <button type="button" onClick={() => setPaymentMethod('boleto')} className={`border rounded p-2 ${paymentMethod==='boleto'?'border-primary':''}`}>Boleto</button>
       </div>
 
-      {/* Dados do comprador */}
-      <div className="grid grid-cols-2 gap-2">
-        <input className="border rounded p-2" placeholder="Nome" value={firstName} onChange={e=>setFirstName(e.target.value)} required />
-        <input className="border rounded p-2" placeholder="Sobrenome" value={lastName} onChange={e=>setLastName(e.target.value)} required />
-        <input className="border rounded p-2 col-span-2" type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} required />
-        <input className="border rounded p-2 col-span-2" placeholder="CPF (somente números)" value={cpf} onChange={e=>setCpf(e.target.value)} required />
-      </div>
+      {/* Campo CPF */}
+      <input 
+        className="border rounded p-2 w-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+        placeholder="CPF (somente números)" 
+        value={cpf} 
+        onChange={e=>setCpf(e.target.value)} 
+        required 
+      />
 
       {paymentMethod === 'card' && (
         <div className="space-y-2">
-          <input className="border rounded p-2 w-full" placeholder="Número do cartão" value={cardNumber} onChange={e=>setCardNumber(e.target.value)} required />
-          <input className="border rounded p-2 w-full" placeholder="Nome impresso no cartão" value={cardholderName} onChange={e=>setCardholderName(e.target.value)} required />
+          <input 
+            className="border rounded p-2 w-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            placeholder="Número do cartão" 
+            value={cardNumber} 
+            onChange={e=>setCardNumber(e.target.value)} 
+            required 
+          />
+          <input 
+            className="border rounded p-2 w-full bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            placeholder="Nome impresso no cartão" 
+            value={cardholderName} 
+            onChange={e=>setCardholderName(e.target.value)} 
+            required 
+          />
           <div className="grid grid-cols-3 gap-2">
-            <input className="border rounded p-2" placeholder="MM" value={expirationMonth} onChange={e=>setExpirationMonth(e.target.value)} required />
-            <input className="border rounded p-2" placeholder="AAAA" value={expirationYear} onChange={e=>setExpirationYear(e.target.value)} required />
-            <input className="border rounded p-2" placeholder="CVV" value={securityCode} onChange={e=>setSecurityCode(e.target.value)} required />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="text-sm self-center">Parcelas</label>
-            <input type="number" min={1} max={12} className="border rounded p-2" value={installments} onChange={e=>setInstallments(parseInt(e.target.value||'1'))}/>
+            <input 
+              className="border rounded p-2 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+              placeholder="MM" 
+              value={expirationMonth} 
+              onChange={e=>setExpirationMonth(e.target.value)} 
+              required 
+            />
+            <input 
+              className="border rounded p-2 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+              placeholder="AAAA" 
+              value={expirationYear} 
+              onChange={e=>setExpirationYear(e.target.value)} 
+              required 
+            />
+            <input 
+              className="border rounded p-2 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+              placeholder="CVV" 
+              value={securityCode} 
+              onChange={e=>setSecurityCode(e.target.value)} 
+              required 
+            />
           </div>
         </div>
       )}

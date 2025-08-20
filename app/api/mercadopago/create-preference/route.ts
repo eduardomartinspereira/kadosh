@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         accessToken: process.env.MP_ACCESS_TOKEN!
       })
       
-      // Criar preferência de pagamento
+      // Criar preferência de pagamento simplificada
       const preference = {
         items: [
           {
@@ -53,9 +53,7 @@ export async function POST(request: NextRequest) {
         ],
         payment_methods: {
           excluded_payment_types: [],
-          excluded_payment_methods: [],
-          installments: 12,
-          default_installments: 1
+          excluded_payment_methods: []
         },
         back_urls: {
           success: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/payment/success?plan=${planId}&cycle=${billingCycle}`,
