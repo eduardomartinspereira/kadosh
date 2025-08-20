@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { MercadoPagoConfig, Preference } from 'mercadopago'
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,14 +35,10 @@ export async function POST(request: NextRequest) {
     
     try {
       // Configurar MercadoPago
-      const { MercadoPagoConfig, Preference } = require('mercadopago')
-      console.log('SDK MercadoPago importado com sucesso')
-      
       const config = new MercadoPagoConfig({
         accessToken: process.env.MP_ACCESS_TOKEN!
       })
-      console.log('Configuração MercadoPago criada')
-
+      
       // Criar preferência de pagamento
       const preference = {
         items: [
@@ -134,4 +131,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-} 
+}

@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { ArrowLeft, Shield, Check } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Shield, Check, Lock, CreditCard, QrCode, FileText } from "lucide-react"
-import Link from "next/link"
-import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
+
+// >>> IMPORTA o formulário do Checkout Transparente
+import TransparentForm from "./TransparentForm"
 
 interface Plan {
   id: string
@@ -73,66 +75,40 @@ const plans: Record<string, Plan> = {
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams()
-  const planId = searchParams.get("plan") || "basic"
-  const billingCycle = searchParams.get("cycle") || "monthly"
-  
-  // Inicializar MercadoPago
-  useEffect(() => {
-    initMercadoPago(process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY || 'TEST-12345678-1234-1234-1234-123456789012')
-  }, [])
-  
-  // Verificar se o usuário está logado e gerar preferência
-  useEffect(() => {
-    const user = localStorage.getItem('user')
-    if (!user) {
-      alert("Você precisa estar logado para acessar esta página. Faça login primeiro.")
-      window.location.href = "/auth/login"
-      return
-    }
+  const planId = (searchParams.get("plan") || "basic").toLowerCase()
+  const billingCycle = (searchParams.get("cycle") || "monthly").toLowerCase() // 'monthly' | 'yearly'
 
-    // Gerar preferência de pagamento
-    const generatePreference = async () => {
-      try {
-        const userData = JSON.parse(user)
-        const response = await fetch('/api/mercadopago/create-preference', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            planId,
-            billingCycle,
-            userId: userData.id
-          }),
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          setPreferenceId(data.preferenceId)
-        } else {
-          console.error('Erro ao gerar preferência')
-        }
-      } catch (error) {
-        console.error('Erro ao gerar preferência:', error)
+  // Verificar se o usuário está logado
+  useEffect(() => {
+    try {
+      const user = typeof window !== "undefined" ? localStorage.getItem("user") : null
+      if (!user) {
+        alert("Você precisa estar logado para acessar esta página. Faça login primeiro.")
+        window.location.href = "/auth/login"
       }
-    }
+    } catch (_) {}
+  }, [])
 
-    generatePreference()
-  }, [planId, billingCycle])
-  
-  const [isLoading, setIsLoading] = useState(false)
-  const [preferenceId, setPreferenceId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     acceptTerms: false,
   })
 
-  const selectedPlan = plans[planId]
+  const selectedPlan = plans[planId] || plans.basic
   const price = billingCycle === "monthly" ? selectedPlan.monthlyPrice : selectedPlan.yearlyPrice
-  const savings = billingCycle === "yearly" ? (selectedPlan.monthlyPrice * 12) - selectedPlan.yearlyPrice : 0
+  const savings =
+    billingCycle === "yearly" ? selectedPlan.monthlyPrice * 12 - selectedPlan.yearlyPrice : 0
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
+
+  // Public Key do MP vinda do .env (NEXT_PUBLIC_MP_PUBLIC_KEY)
+  const mpPublicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY
+
+  // Descrição que será enviada ao pagamento
+  const paymentDescription = `Assinatura do plano ${selectedPlan.name} - ${
+    billingCycle === "monthly" ? "Mensal" : "Anual"
+  }`
 
   return (
     <div className="min-h-screen bg-background py-12">
@@ -140,12 +116,17 @@ export default function CheckoutPage() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <Link href="/plans" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4">
+            <Link
+              href="/plans"
+              className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4"
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar aos planos
             </Link>
             <h1 className="text-3xl font-bold text-foreground">Finalizar Assinatura</h1>
-            <p className="text-muted-foreground mt-2">Complete seu pagamento para acessar a plataforma</p>
+            <p className="text-muted-foreground mt-2">
+              Complete seu cadastro para acessar a plataforma
+            </p>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
@@ -199,144 +180,83 @@ export default function CheckoutPage() {
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3 mb-3">
                     <Shield className="h-5 w-5 text-green-500" />
-                    <span className="font-semibold text-foreground">Pagamento Seguro</span>
+                    <h4 className="font-semibold text-foreground">Segurança e Privacidade</h4>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Seus dados são protegidos com criptografia SSL de 256 bits. Não armazenamos informações do cartão.
+                    Seus dados estão protegidos com criptografia de ponta a ponta. Nunca
+                    compartilhamos suas informações pessoais com terceiros.
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Payment Form */}
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <Lock className="h-5 w-5" />
-                  Forma de Pagamento
-                </CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Escolha entre PIX, cartão ou boleto para finalizar sua assinatura
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-2">
-                    <Checkbox
-                      id="terms"
-                      checked={formData.acceptTerms}
-                      onCheckedChange={(checked) => handleChange("acceptTerms", checked as boolean)}
-                      required
-                      className="border-border"
-                    />
-                    <Label htmlFor="terms" className="text-sm leading-relaxed text-muted-foreground">
-                      Aceito os{" "}
-                      <Link href="/terms" className="text-primary hover:underline">
-                        Termos de Uso
-                      </Link>{" "}
-                      e{" "}
-                      <Link href="/privacy" className="text-primary hover:underline">
-                        Política de Privacidade
-                      </Link>
-                    </Label>
+            {/* Checkout Form */}
+            <div className="space-y-6">
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Informações de Pagamento</CardTitle>
+                  <CardDescription>
+                    Use o Checkout Transparente do Mercado Pago para concluir sua assinatura
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Terms and Conditions */}
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-2">
+                      <Checkbox
+                        id="acceptTerms"
+                        checked={formData.acceptTerms}
+                        onCheckedChange={(checked) =>
+                          handleChange("acceptTerms", Boolean(checked))
+                        }
+                      />
+                      <div className="grid gap-1.5 leading-none">
+                        <Label
+                          htmlFor="acceptTerms"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Aceito os termos e condições
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Li e concordo com os{" "}
+                          <Link href="/terms" className="text-primary hover:underline">
+                            termos de serviço
+                          </Link>{" "}
+                          e{" "}
+                          <Link href="/privacy" className="text-primary hover:underline">
+                            política de privacidade
+                          </Link>
+                          .
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                {/* Opções de Pagamento */}
-                {preferenceId ? (
-                  <Tabs defaultValue="pix" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 bg-muted">
-                      <TabsTrigger value="pix" className="flex items-center gap-2">
-                        <QrCode className="h-4 w-4" />
-                        PIX
-                      </TabsTrigger>
-                      <TabsTrigger value="card" className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4" />
-                        Cartão
-                      </TabsTrigger>
-                      <TabsTrigger value="boleto" className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        Boleto
-                      </TabsTrigger>
-                    </TabsList>
-
-                    {/* PIX */}
-                    <TabsContent value="pix" className="space-y-4">
-                      <div className="text-center py-6">
-                        <div className="w-32 h-32 bg-muted rounded-lg mx-auto mb-4 flex items-center justify-center">
-                          <QrCode className="h-16 w-16 text-muted-foreground" />
-                        </div>
-                        <h3 className="font-semibold text-foreground mb-2">Pagamento via PIX</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Escaneie o QR Code ou copie o código PIX para pagar instantaneamente
-                        </p>
-                        <Button 
-                          className="w-full" 
-                          size="lg"
-                          onClick={() => window.open(`https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`, '_blank')}
-                        >
-                          Pagar com PIX
-                        </Button>
+                  {/* Renderiza o Checkout Transparente somente após aceitar os termos */}
+                  {formData.acceptTerms ? (
+                    mpPublicKey ? (
+                      <TransparentForm
+                        amount={price}
+                        description={paymentDescription}
+                        publicKey={mpPublicKey}
+                      />
+                    ) : (
+                      <div className="text-sm text-red-500">
+                        Defina <code>NEXT_PUBLIC_MP_PUBLIC_KEY</code> no seu <code>.env</code> para
+                        habilitar o pagamento.
                       </div>
-                    </TabsContent>
-
-                    {/* Cartão de Crédito */}
-                    <TabsContent value="card" className="space-y-4">
-                      <div className="text-center py-6">
-                        <div className="w-32 h-32 bg-muted rounded-lg mx-auto mb-4 flex items-center justify-center">
-                          <CreditCard className="h-16 w-16 text-muted-foreground" />
-                        </div>
-                        <h3 className="font-semibold text-foreground mb-2">Cartão de Crédito/Débito</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Pague com cartão de crédito ou débito de forma segura
-                        </p>
-                        <Button 
-                          className="w-full" 
-                          size="lg"
-                          onClick={() => window.open(`https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`, '_blank')}
-                        >
-                          Pagar com Cartão
-                        </Button>
-                      </div>
-                    </TabsContent>
-
-                    {/* Boleto */}
-                    <TabsContent value="boleto" className="space-y-4">
-                      <div className="text-center py-6">
-                        <div className="w-32 h-32 bg-muted rounded-lg mx-auto mb-4 flex items-center justify-center">
-                          <FileText className="h-16 w-16 text-muted-foreground" />
-                        </div>
-                        <h3 className="font-semibold text-foreground mb-2">Boleto Bancário</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Gere um boleto para pagar no banco ou internet banking
-                        </p>
-                        <Button 
-                          className="w-full" 
-                          size="lg"
-                          onClick={() => window.open(`https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`, '_blank')}
-                        >
-                          Pagar com Boleto
-                        </Button>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                ) : (
-                  <div className="border border-border rounded-lg p-4 text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Carregando opções de pagamento...</p>
-                  </div>
-                )}
-
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Pagamento processado com segurança pelo MercadoPago
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                    )
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Marque &quot;Aceito os termos e condições&quot; para liberar o pagamento.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
     </div>
   )
-} 
+}

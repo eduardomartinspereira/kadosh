@@ -6,8 +6,8 @@ Sistema completo de website para designer de interiores com autenticação, plan
 
 - ✅ Sistema de autenticação (cadastro/login)
 - ✅ Páginas de planos com preços
-- ✅ Sistema de checkout com MercadoPago
-- ✅ Múltiplas formas de pagamento (PIX, cartão, boleto)
+- ✅ Sistema de checkout simplificado
+- ✅ Interface para seleção de planos
 - ✅ Banco de dados com Prisma
 - ✅ Interface moderna com Tailwind CSS
 
@@ -47,9 +47,8 @@ JWT_SECRET="sua-chave-secreta-jwt-aqui"
 NEXTAUTH_SECRET="seu-secret-nextauth-aqui"
 NEXTAUTH_URL="http://localhost:3000"
 
-# MercadoPago (para produção)
-NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY="APP-12345678-1234-1234-1234-123456789012"
-MERCADOPAGO_ACCESS_TOKEN="APP-12345678-1234-1234-1234-123456789012"
+# Configurações adicionais (se necessário)
+# Adicione outras variáveis de ambiente conforme necessário
 ```
 
 5. Configure o banco de dados:
@@ -63,14 +62,13 @@ npx prisma generate
 npm run dev
 ```
 
-## 🔑 Configuração do MercadoPago
+## 🔑 Configuração
 
 Para usar em produção, você precisa:
 
-1. Criar uma conta no [MercadoPago](https://www.mercadopago.com.br/)
-2. Obter suas credenciais de produção
-3. Configurar webhooks para notificações de pagamento
-4. Substituir as chaves de teste pelas de produção
+1. Configurar seu banco de dados
+2. Definir as variáveis de ambiente necessárias
+3. Configurar autenticação JWT
 
 ## 📱 Uso
 
@@ -78,7 +76,7 @@ Para usar em produção, você precisa:
 2. **Login**: Acesse `/auth/login` para fazer login
 3. **Planos**: Acesse `/plans` para ver os planos disponíveis
 4. **Checkout**: Clique em "Começar Agora" para ir ao pagamento
-5. **Pagamento**: Escolha entre PIX, cartão ou boleto
+5. **Checkout**: Complete o processo de assinatura
 
 ## 🏗️ Estrutura do Projeto
 
@@ -86,8 +84,7 @@ Para usar em produção, você precisa:
 app/
 ├── api/                    # APIs do backend
 │   ├── auth/              # Autenticação
-│   ├── checkout/          # Processamento de pagamentos
-│   └── mercadopago/       # Integração MercadoPago
+│   ├── checkout/          # Processamento de assinaturas
 ├── auth/                  # Páginas de autenticação
 ├── checkout/              # Página de pagamento
 ├── plans/                 # Página de planos
@@ -110,7 +107,7 @@ prisma/                    # Schema e configuração do banco
 - **Styling**: Tailwind CSS + shadcn/ui
 - **Backend**: Next.js API Routes
 - **Database**: Prisma ORM
-- **Pagamentos**: MercadoPago SDK
+- **Interface**: Componentes reutilizáveis
 
 ## 📄 Licença
 
