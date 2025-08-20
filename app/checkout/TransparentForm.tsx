@@ -1,12 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-
-declare global {
-  interface Window {
-    MercadoPago: any;
-  }
-}
+import { useState } from 'react';
 
 type Props = {
   amount: number;
@@ -26,7 +20,6 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
   const [expirationMonth, setExpirationMonth] = useState('');
   const [expirationYear, setExpirationYear] = useState('');
   const [securityCode, setSecurityCode] = useState('');
-  const mpRef = useRef<any>(null);
 
   // Função para aplicar máscara do CPF
   const formatCPF = (value: string) => {
@@ -51,44 +44,13 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
     setCpf(formatted);
   };
 
-  useEffect(() => {
-    const inject = () =>
-      new Promise<void>((resolve, reject) => {
-        if (window.MercadoPago) return resolve();
-        const s = document.createElement('script');
-        s.src = 'https://sdk.mercadopago.com/js/v2';
-        s.async = true;
-        s.onload = () => resolve();
-        s.onerror = reject;
-        document.body.appendChild(s);
-      });
-
-    (async () => {
-      try {
-        await inject();
-        mpRef.current = new window.MercadoPago(publicKey, { locale: 'pt-BR' });
-      } catch (error) {
-        console.error('Erro ao carregar SDK do Mercado Pago:', error);
-      }
-    })();
-  }, [publicKey]);
-
   async function payWithCard() {
-    if (!mpRef.current) {
-      alert('SDK não carregado');
-      return;
-    }
-
     setLoading(true);
     try {
-      // Cria token do cartão usando os valores dos campos
-      const { id: token } = await mpRef.current.fields.createCardToken({
-        cardNumber: cardNumber.replace(/\s/g, ''),
-        cardholderName,
-        securityCode,
-        expirationMonth,
-        expirationYear,
-      });
+      // Validações básicas
+      if (!cardNumber || !cardholderName || !expirationMonth || !expirationYear || !securityCode) {
+        throw new Error('Todos os campos do cartão são obrigatórios');
+      }
 
       const res = await fetch('/api/mercadopago/payments', {
         method: 'POST',
@@ -97,7 +59,13 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
           amount,
           description,
           payment_method: 'card',
-          token,
+          card_data: {
+            cardNumber: cardNumber.replace(/\s/g, ''),
+            cardholderName,
+            securityCode,
+            expirationMonth,
+            expirationYear,
+          },
           payer: {
             email,
             identification: { type: 'CPF', number: cpf.replace(/\D/g, '') },
@@ -112,12 +80,8 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
       alert(`Pagamento cartão: ${json.status}`);
       // TODO: redirecionar para página de sucesso/falha
     } catch (error: any) {
-      console.error('=== ERRO DETALHADO NO PAGAMENTO ===');
-      console.error('Tipo de erro:', error?.constructor?.name || 'Desconhecido');
-      console.error('Mensagem:', error?.message || 'Sem mensagem');
-      console.error('Stack:', error?.stack || 'Sem stack');
-      console.error('Erro completo:', error);
-      console.error('=== FIM DO ERRO DETALHADO ===');
+      console.error('=== ERRO NO PAGAMENTO ===');
+      console.error('Erro:', error);
       
       const errorMessage = error?.message || 'Erro desconhecido ao processar pagamento';
       alert(`Erro no pagamento: ${errorMessage}`);
