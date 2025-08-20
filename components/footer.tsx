@@ -104,16 +104,7 @@ export function Footer() {
 
           {/* Newsletter */}
           <div className="lg:col-span-1">
-            <h3 className="font-semibold text-lg mb-4">Newsletter</h3>
-            <p className="text-muted-foreground mb-4 text-sm">Receba novidades, dicas de design e ofertas exclusivas</p>
-            <div className="space-y-3">
-              <Input
-                type="email"
-                placeholder="Seu e-mail"
-                className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
-              />
-              <Button className="w-full">Inscrever-se</Button>
-            </div>
+            
 
             {/* Social Media */}
             <div className="mt-6">

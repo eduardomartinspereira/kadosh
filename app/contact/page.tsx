@@ -23,11 +23,70 @@ export default function ContactPage() {
     message: "",
   })
 
+  // Função para aplicar máscara de telefone
+  const formatPhoneNumber = (value: string) => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '')
+    
+    // Aplica a máscara (99) 99999-9999
+    if (numbers.length <= 2) {
+      return numbers
+    } else if (numbers.length <= 7) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
+    } else if (numbers.length <= 11) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`
+    } else {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
+    }
+  }
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value)
+    setFormData(prev => ({ ...prev, phone: formatted }))
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Aqui você implementaria o envio do formulário
-    console.log("Form submitted:", formData)
-    alert("Mensagem enviada com sucesso! Entraremos em contato em breve.")
+    
+    // Formatar a mensagem para o WhatsApp
+    const whatsappMessage = `Nova mensagem do site HD Designer
+
+Nome: ${formData.name}
+E-mail: ${formData.email}
+Telefone: ${formData.phone || 'Não informado'}
+Empresa: ${formData.company || 'Não informado'}
+Serviço de interesse: ${formData.service || 'Não informado'}
+
+*Mensagem:*
+${formData.message}
+
+---
+Mensagem enviada através do formulário de contato do site.`
+
+    // Codificar a mensagem para URL
+    const encodedMessage = encodeURIComponent(whatsappMessage)
+    
+    // Número do WhatsApp (formato internacional)
+    const whatsappNumber = "5531986022600"
+    
+    // URL do WhatsApp
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`
+    
+    // Abrir WhatsApp em nova aba
+    window.open(whatsappUrl, "_blank")
+    
+    // Mostrar mensagem de sucesso
+    alert("Formulário enviado! Redirecionando para o WhatsApp...")
+    
+    // Limpar o formulário
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      company: "",
+      service: "",
+      message: "",
+    })
   }
 
   const handleChange = (field: string, value: string) => {
@@ -133,10 +192,13 @@ export default function ContactPage() {
                         <Input
                           id="phone"
                           value={formData.phone}
-                          onChange={(e) => handleChange("phone", e.target.value)}
-                          placeholder="(31) 99999-9999"
+                          onChange={(e) => handlePhoneChange(e.target.value)}
+                          placeholder="(31) 98602-2600"
                           className="bg-muted border-border"
                         />
+                        <p className="text-xs text-muted-foreground">
+                          Formato: (31) 98602-2600
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="company">Empresa</Label>
@@ -227,7 +289,7 @@ export default function ContactPage() {
                         className="bg-green-600 hover:bg-green-700 text-white"
                         onClick={() =>
                           window.open(
-                            "https://wa.me/5531986022600?text=Olá! Gostaria de saber mais sobre os serviços da Kadosh.",
+                            "https://wa.me/5531986022600?text=Olá! Gostaria de saber mais sobre os serviços da HD Designer.",
                             "_blank",
                           )
                         }
@@ -268,7 +330,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Map Section */}
+      {/* Map Section 
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -291,6 +353,7 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
+      */}
 
       <WhatsAppButton />
     </div>

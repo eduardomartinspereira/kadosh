@@ -9,32 +9,19 @@ import { WhatsAppButton } from "@/components/whatsapp-button"
 export default function AboutPage() {
   const team = [
     {
-      name: "Helena Dias",
-      role: "Diretora Criativa",
+      name: "Hudson Soares",
+      role: "Fundador e CEO",
       image: "/placeholder.svg?height=300&width=300",
-      description: "15 anos de experiência em design gráfico e branding",
-    },
-    {
-      name: "Ricardo Mendes",
-      role: "Designer Sênior",
-      image: "/placeholder.svg?height=300&width=300",
-      description: "Especialista em design digital e interfaces de usuário",
-    },
-    {
-      name: "Carla Santos",
-      role: "Estrategista de Marca",
-      image: "/placeholder.svg?height=300&width=300",
-      description: "MBA em Marketing e especialização em branding",
-    },
+      description: "Mais de 10 anos de experiência em design e comunicação cristã",
+    }
   ]
 
   const milestones = [
-    { year: "2019", event: "Fundação da Kadosh" },
-    { year: "2020", event: "Primeiro grande cliente corporativo" },
-    { year: "2021", event: "Expansão da equipe e novos serviços" },
-    { year: "2022", event: "Lançamento da plataforma de planos" },
-    { year: "2023", event: "500+ projetos entregues" },
-    { year: "2024", event: "Reconhecimento como referência no mercado" },
+    { year: "2020", event: "Fundação da Kadosh" },
+    { year: "2021", event: "Identificação da lacuna no mercado cristão" },
+    { year: "2022", event: "Desenvolvimento da plataforma digital" },
+    { year: "2023", event: "Lançamento da biblioteca de recursos criativos" },
+    { year: "2024", event: "Expansão e reconhecimento no segmento cristão" },
   ]
 
   return (
@@ -46,10 +33,9 @@ export default function AboutPage() {
             <Badge variant="secondary" className="mb-4">
               Sobre a Kadosh
             </Badge>
-            <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">Criando conexões através do design</h1>
+            <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">Sobre Nós – Kadosh</h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
-              Somos uma agência de design apaixonada por transformar ideias em experiências visuais marcantes. Nossa
-              missão é elevar marcas através de soluções criativas e estratégicas.
+              Uma plataforma digital especializada em oferecer recursos criativos para designers e comunicadores que atuam no segmento cristão.
             </p>
           </div>
         </div>
@@ -60,26 +46,23 @@ export default function AboutPage() {
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground">Nossa História</h2>
+              <h2 className="text-3xl lg:text-4xl font-bold text-foreground">Quem Somos</h2>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  A Kadosh nasceu com o propósito de facilitar o acesso a artes e materiais gráficos cristãos com
-                  qualidade e agilidade. Fundada com a visão de se tornar a maior biblioteca digital de artes cristãs
-                  para designers e igrejas no Brasil.
-                </p>
-                <p>
-                  Nossa jornada começou identificando a necessidade de materiais gráficos de qualidade específicos para
-                  o público cristão, oferecendo soluções práticas e acessíveis para igrejas, ministérios e designers.
-                </p>
-                <p>
-                  Hoje, oferecemos uma assinatura mensal com acesso completo à nossa biblioteca de arquivos PSD, PNG,
-                  JPG, flyers e artes cristãs editáveis, sempre mantendo nossos valores de qualidade, agilidade,
-                  acessibilidade, ética e compromisso com o público cristão.
+                  A Kadosh é uma plataforma digital especializada em oferecer recursos criativos para designers e comunicadores que atuam no segmento cristão. Fundada por Hudson Soares, unimos mais de 10 anos de experiência no design com a missão de simplificar e potencializar o processo criativo de quem comunica a mensagem do Evangelho através das artes visuais.
                 </p>
               </div>
+              
+              <h3 className="text-2xl font-bold text-foreground">Nossa Origem</h3>
+              <div className="space-y-4 text-muted-foreground leading-relaxed">
+                <p>
+                  A ideia nasceu de uma lacuna no mercado. Ao longo de anos atendendo igrejas e eventos cristãos, percebemos que não havia um ambiente que reunisse, de forma prática e organizada, materiais relevantes e de alta qualidade para esse nicho. Foi então que decidimos transformar essa necessidade em oportunidade, criando um espaço que oferece exatamente o que buscávamos no passado.
+                </p>
+              </div>
+              
               <Button size="lg" asChild>
                 <Link href="/contact">
-                  Trabalhe Conosco
+                  Entre em Contato
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
@@ -101,37 +84,23 @@ export default function AboutPage() {
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">Missão, Visão e Valores</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">Nossos Serviços e Compromisso</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Os pilares que fundamentam nosso trabalho e compromisso com o público cristão
+              O que oferecemos e como nos comprometemos com sua criatividade
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8">
             <Card className="text-center hover:shadow-lg transition-shadow bg-card border-border">
               <CardHeader>
                 <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-primary-foreground mb-4">
                   <Target className="h-6 w-6" />
                 </div>
-                <CardTitle className="text-xl text-foreground">Nossa Missão</CardTitle>
+                <CardTitle className="text-xl text-foreground">O que Fazemos</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-base text-muted-foreground">
-                  Facilitar o acesso a artes e materiais gráficos cristãos com qualidade e agilidade.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center hover:shadow-lg transition-shadow bg-card border-border">
-              <CardHeader>
-                <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-primary-foreground mb-4">
-                  <Award className="h-6 w-6" />
-                </div>
-                <CardTitle className="text-xl text-foreground">Nossa Visão</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base text-muted-foreground">
-                  Ser a maior biblioteca digital de artes cristãs para designers e igrejas no Brasil.
+                  Disponibilizamos uma biblioteca de templates, arquivos PSD e artes temáticas projetadas para atender as demandas do público cristão. Nossa plataforma é intuitiva, atualizada constantemente e pensada para economizar tempo, sem comprometer a qualidade do resultado final.
                 </CardDescription>
               </CardContent>
             </Card>
@@ -141,12 +110,126 @@ export default function AboutPage() {
                 <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-primary-foreground mb-4">
                   <Heart className="h-6 w-6" />
                 </div>
-                <CardTitle className="text-xl text-foreground">Nossos Valores</CardTitle>
+                <CardTitle className="text-xl text-foreground">Nosso Compromisso</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-base text-muted-foreground">
-                  Qualidade, agilidade, acessibilidade, ética e compromisso com o público cristão.
+                  Mais do que fornecer arquivos, queremos ser parceiros no processo criativo. Nosso objetivo é que cada arte produzida com nossos recursos tenha impacto, clareza e excelência — fortalecendo a comunicação e potencializando o alcance das mensagens que você quer transmitir.
                 </CardDescription>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Para Quem Section */}
+      <section className="py-20 bg-card">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">Para Quem</h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Nossos recursos são desenvolvidos especificamente para atender suas necessidades
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="text-center hover:shadow-lg transition-shadow bg-background border-border">
+              <CardHeader>
+                <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-primary-foreground mb-4">
+                  <Target className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-xl text-foreground">Designers Cristãos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Que precisam de agilidade e variedade em seus projetos criativos.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center hover:shadow-lg transition-shadow bg-background border-border">
+              <CardHeader>
+                <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-primary-foreground mb-4">
+                  <Heart className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-xl text-foreground">Voluntários de Mídia</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Que atuam na comunicação visual de suas igrejas.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center hover:shadow-lg transition-shadow bg-background border-border">
+              <CardHeader>
+                <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-primary-foreground mb-4">
+                  <Award className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-xl text-foreground">Pastores e Líderes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Que desejam criar seus próprios materiais de divulgação.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Nosso Diferencial Section */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">Nosso Diferencial</h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              O que nos torna únicos no mercado de recursos criativos cristãos
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            <Card className="hover:shadow-lg transition-shadow bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-xl text-foreground">Conteúdo 100% Focado</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Conteúdo 100% focado no segmento cristão, evitando dispersão e garantindo relevância.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-xl text-foreground">Organização Estratégica</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Organização estratégica que facilita a busca por temas e formatos específicos.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-xl text-foreground">Arquivos Prontos para Edição</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Arquivos prontos para edição, otimizando o tempo de produção.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-xl text-foreground">Atualizações Frequentes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Frequentes atualizações para acompanhar tendências e datas importantes.
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -159,7 +242,7 @@ export default function AboutPage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">Nossa Equipe</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Profissionais talentosos e apaixonados por design
+              Conheça o fundador da Kadosh
             </p>
           </div>
 
@@ -218,13 +301,13 @@ export default function AboutPage() {
       {/* CTA Section */}
       <section className="py-20 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Vamos criar algo incrível juntos?</h2>
+          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Pronto para potencializar sua criatividade?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Entre em contato e descubra como podemos transformar sua visão em realidade
+            Acesse nossa biblioteca de recursos criativos e transforme suas ideias em artes impactantes
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="secondary" className="text-lg px-8" asChild>
-              <Link href="/contact">Iniciar Projeto</Link>
+              <Link href="/catalog">Explorar Catálogo</Link>
             </Button>
             <Button
               size="lg"
@@ -232,7 +315,7 @@ export default function AboutPage() {
               className="text-lg px-8 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary bg-transparent"
               asChild
             >
-              <Link href="/catalog">Ver Portfólio</Link>
+              <Link href="/plans">Ver Planos</Link>
             </Button>
             <Button
               size="lg"
@@ -240,7 +323,7 @@ export default function AboutPage() {
               className="text-lg px-8 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary bg-transparent"
               asChild
             >
-              <Link href="https://www.instagram.com/kadosh.ofc/">Instagram</Link>
+              <Link href="/contact">Falar Conosco</Link>
             </Button>
           </div>
         </div>

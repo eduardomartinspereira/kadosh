@@ -7,18 +7,17 @@ const sampleProducts = [
     name: 'Flyer Evento de Jovens',
     description: 'Flyer moderno para evento de jovens com design atrativo e cores vibrantes',
     categorySlug: 'flyers-eventos',
-    assets: [
+    mainImage: '/images/products/flyer-jovens-1.jpg',
+    images: [
       {
+        url: '/images/products/flyer-jovens-1.jpg',
         label: 'Versão Principal',
-        uri: '/images/products/flyer-jovens-1.jpg',
-        type: 'IMAGE',
         width: 800,
         height: 600
       },
       {
+        url: '/images/products/flyer-jovens-2.jpg',
         label: 'Versão Alternativa',
-        uri: '/images/products/flyer-jovens-2.jpg',
-        type: 'IMAGE',
         width: 800,
         height: 600
       }
@@ -28,18 +27,17 @@ const sampleProducts = [
     name: 'Post Instagram Culto',
     description: 'Post otimizado para Instagram com mensagem inspiradora para cultos',
     categorySlug: 'posts-redes-sociais',
-    assets: [
+    mainImage: '/images/products/post-culto-1.jpg',
+    images: [
       {
+        url: '/images/products/post-culto-1.jpg',
         label: 'Post Principal',
-        uri: '/images/products/post-culto-1.jpg',
-        type: 'IMAGE',
         width: 1080,
         height: 1080
       },
       {
+        url: '/images/products/post-culto-2.jpg',
         label: 'Story',
-        uri: '/images/products/post-culto-2.jpg',
-        type: 'IMAGE',
         width: 1080,
         height: 1920
       }
@@ -49,18 +47,17 @@ const sampleProducts = [
     name: 'Banner Igreja',
     description: 'Banner digital para igreja com design limpo e profissional',
     categorySlug: 'banners',
-    assets: [
+    mainImage: '/images/products/banner-igreja-1.jpg',
+    images: [
       {
+        url: '/images/products/banner-igreja-1.jpg',
         label: 'Banner Principal',
-        uri: '/images/products/banner-igreja-1.jpg',
-        type: 'IMAGE',
         width: 1200,
         height: 400
       },
       {
+        url: '/images/products/banner-igreja-2.jpg',
         label: 'Banner Mobile',
-        uri: '/images/products/banner-igreja-2.jpg',
-        type: 'IMAGE',
         width: 400,
         height: 600
       }
@@ -70,18 +67,17 @@ const sampleProducts = [
     name: 'Convite Batizado',
     description: 'Convite elegante para cerimônia de batizado com design tradicional',
     categorySlug: 'convites',
-    assets: [
+    mainImage: '/images/products/convite-batizado-1.jpg',
+    images: [
       {
+        url: '/images/products/convite-batizado-1.jpg',
         label: 'Frente',
-        uri: '/images/products/convite-batizado-1.jpg',
-        type: 'IMAGE',
         width: 600,
         height: 400
       },
       {
+        url: '/images/products/convite-batizado-2.jpg',
         label: 'Verso',
-        uri: '/images/products/convite-batizado-2.jpg',
-        type: 'IMAGE',
         width: 600,
         height: 400
       }
@@ -91,18 +87,17 @@ const sampleProducts = [
     name: 'Arte Culto Domingo',
     description: 'Arte para culto de domingo com mensagem bíblica inspiradora',
     categorySlug: 'artes-cultos',
-    assets: [
+    mainImage: '/images/products/arte-culto-1.jpg',
+    images: [
       {
+        url: '/images/products/arte-culto-1.jpg',
         label: 'Arte Principal',
-        uri: '/images/products/arte-culto-1.jpg',
-        type: 'IMAGE',
         width: 1200,
         height: 800
       },
       {
+        url: '/images/products/arte-culto-2.jpg',
         label: 'Versão Redes Sociais',
-        uri: '/images/products/arte-culto-2.jpg',
-        type: 'IMAGE',
         width: 1080,
         height: 1080
       }
@@ -112,25 +107,23 @@ const sampleProducts = [
     name: 'Arte Natal',
     description: 'Arte natalina com tema cristão e design festivo',
     categorySlug: 'datas-comemorativas',
-    assets: [
+    mainImage: '/images/products/arte-natal-1.jpg',
+    images: [
       {
+        url: '/images/products/arte-natal-1.jpg',
         label: 'Arte Principal',
-        uri: '/images/products/arte-natal-1.jpg',
-        type: 'IMAGE',
         width: 1200,
         height: 800
       },
       {
+        url: '/images/products/arte-natal-2.jpg',
         label: 'Versão Cartão',
-        uri: '/images/products/arte-natal-2.jpg',
-        type: 'IMAGE',
         width: 600,
         height: 400
       },
       {
+        url: '/images/products/arte-natal-3.jpg',
         label: 'Versão Redes Sociais',
-        uri: '/images/products/arte-natal-3.jpg',
-        type: 'IMAGE',
         width: 1080,
         height: 1080
       }
@@ -140,25 +133,23 @@ const sampleProducts = [
     name: 'Template Flyer Evento',
     description: 'Template editável para flyers de eventos com múltiplas variações',
     categorySlug: 'assets-criacao',
-    assets: [
+    mainImage: '/images/products/template-flyer-1.jpg',
+    images: [
       {
+        url: '/images/products/template-flyer-1.jpg',
         label: 'Template Base',
-        uri: '/images/products/template-flyer-1.jpg',
-        type: 'IMAGE',
         width: 800,
         height: 600
       },
       {
+        url: '/images/products/template-flyer-2.jpg',
         label: 'Variação 1',
-        uri: '/images/products/template-flyer-2.jpg',
-        type: 'IMAGE',
         width: 800,
         height: 600
       },
       {
+        url: '/images/products/template-flyer-3.jpg',
         label: 'Variação 2',
-        uri: '/images/products/template-flyer-3.jpg',
-        type: 'IMAGE',
         width: 800,
         height: 600
       }
@@ -209,24 +200,17 @@ async function main() {
           description: productData.description,
           status: 'ACTIVE',
           isPublic: true,
+          mainImage: productData.mainImage,
+          images: productData.images,
           categories: {
             create: {
               categoryId: category.id
             }
-          },
-          assets: {
-            create: productData.assets.map(asset => ({
-              label: asset.label,
-              uri: asset.uri,
-              type: asset.type,
-              width: asset.width,
-              height: asset.height
-            }))
           }
         }
       })
 
-      console.log(`✅ Produto criado: ${product.name} com ${productData.assets.length} imagens`)
+      console.log(`✅ Produto criado: ${product.name} com ${productData.images?.length || 0} imagens`)
 
     } catch (error) {
       console.error(`❌ Erro ao criar produto "${productData.name}":`, error)

@@ -140,6 +140,11 @@ model Product {
   description String?
   status      ProductStatus @default(DRAFT)
   isPublic    Boolean       @default(false)
+  
+  // Campos para imagens
+  mainImage   String?       // URL ou base64 da imagem principal
+  images      Json?         // Array de imagens adicionais [{"url": "...", "label": "..."}]
+  
   metadata    Json?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt

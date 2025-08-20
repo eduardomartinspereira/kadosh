@@ -36,21 +36,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Buscar produtos com categorias e assets
+    // Buscar produtos com categorias
     const products = await prisma.product.findMany({
       where,
       include: {
         categories: {
           include: {
             category: true
-          }
-        },
-        assets: {
-          where: {
-            type: 'IMAGE'
-          },
-          orderBy: {
-            createdAt: 'asc'
           }
         }
       },
@@ -87,7 +79,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, description, categoryIds, assets } = body
+    const { name, description, categoryIds, mainImage, images } = body
 
     if (!name || !categoryIds || !Array.isArray(categoryIds) || categoryIds.length === 0) {
       return NextResponse.json(
@@ -106,6 +98,12 @@ export async function POST(request: NextRequest) {
       .replace(/-+/g, '-')
       .trim()
 
+    // Preparar dados das imagens
+    const imageData = {
+      mainImage: mainImage || null,
+      images: images || null
+    }
+
     // Criar produto
     const product = await prisma.product.create({
       data: {
@@ -114,21 +112,12 @@ export async function POST(request: NextRequest) {
         description,
         status: 'ACTIVE',
         isPublic: true,
+        mainImage: imageData.mainImage,
+        images: imageData.images,
         categories: {
           create: categoryIds.map((categoryId: string) => ({
             categoryId
           }))
-        },
-        assets: {
-          create: assets?.map((asset: any) => ({
-            label: asset.label,
-            uri: asset.uri,
-            type: asset.type || 'IMAGE',
-            sizeBytes: asset.sizeBytes,
-            width: asset.width,
-            height: asset.height,
-            previewUri: asset.previewUri
-          })) || []
         }
       },
       include: {
@@ -136,8 +125,7 @@ export async function POST(request: NextRequest) {
           include: {
             category: true
           }
-        },
-        assets: true
+        }
       }
     })
 

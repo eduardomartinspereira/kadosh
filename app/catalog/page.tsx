@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Search, Filter, Share2, Eye, Star, Image as ImageIcon } from "lucide-react"
+import { Search, Filter, Share2, Eye, Star, Image as ImageIcon, Download } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { WhatsAppButton } from "@/components/whatsapp-button"
@@ -43,6 +43,13 @@ interface Product {
   description?: string
   status: string
   isPublic: boolean
+  mainImage?: string
+  images?: Array<{
+    url: string
+    label?: string
+    width?: number
+    height?: number
+  }>
   createdAt: string
   categories: Array<{
     category: Category
@@ -146,14 +153,56 @@ export default function CatalogPage() {
   }
 
   const getProductImage = (product: Product) => {
-    if (product.assets && product.assets.length > 0) {
-      return product.assets[0].uri
+    if (product.mainImage) {
+      return product.mainImage
+    }
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      return product.images[0].url
     }
     return '/placeholder.svg?height=400&width=600'
   }
 
   const getProductCategories = (product: Product) => {
     return product.categories.map(cat => cat.category.name).join(', ')
+  }
+
+  // Funções de download
+  const handleDownloadPSD = (product: Product) => {
+    // Simular download do arquivo PSD
+    console.log('Download PSD:', product.name)
+    
+    // Aqui você pode implementar a lógica real de download
+    // Por exemplo, redirecionar para uma API de download ou abrir um link
+    const downloadUrl = `/api/download/psd/${product.id}`
+    
+    // Criar um link temporário para download
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = `${product.name}.psd`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    alert(`Download PSD iniciado para: ${product.name}`)
+  }
+
+  const handleDownloadCanva = (product: Product) => {
+    // Simular download para Canva
+    console.log('Download Canva:', product.name)
+    
+    // Aqui você pode implementar a lógica real de download para Canva
+    // Por exemplo, redirecionar para uma API específica do Canva
+    const canvaUrl = `/api/download/canva/${product.id}`
+    
+    // Criar um link temporário para download
+    const link = document.createElement('a')
+    link.href = canvaUrl
+    link.download = `${product.name}-canva.zip`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    alert(`Download Canva iniciado para: ${product.name}`)
   }
 
   // Calcular total de páginas para produtos filtrados
@@ -182,13 +231,13 @@ export default function CatalogPage() {
             {/* Search Input */}
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
                   placeholder="Buscar produtos..."
-                  value={searchTerm}
+                value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                   className="pl-10"
-                />
+              />
               </div>
             </div>
 
@@ -197,16 +246,16 @@ export default function CatalogPage() {
               <Select value={selectedCategory} onValueChange={handleCategoryChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as categorias" />
-                </SelectTrigger>
+              </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as categorias</SelectItem>
-                  {categories.map((category) => (
+                {categories.map((category) => (
                     <SelectItem key={category.id} value={category.slug}>
                       {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             </div>
           </div>
 
@@ -230,7 +279,7 @@ export default function CatalogPage() {
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-20">
+            <div className="text-center py-20">
             <div className="text-6xl mb-4">🔍</div>
             <h3 className="text-2xl font-semibold text-foreground mb-4">
               Nenhum produto encontrado
@@ -253,13 +302,13 @@ export default function CatalogPage() {
                 Limpar Filtros
               </Button>
             )}
-          </div>
-        ) : (
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedProducts.map((product) => (
               <Card key={product.id} className="group hover:shadow-lg transition-shadow">
                 <div className="relative aspect-video overflow-hidden rounded-t-lg">
-                  <Image
+                          <Image
                     src={getProductImage(product)}
                     alt={product.name}
                     fill
@@ -278,14 +327,14 @@ export default function CatalogPage() {
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button 
+                            <Button
                           variant="secondary" 
                           size="sm"
                           onClick={() => setSelectedProduct(product)}
-                        >
+                            >
                           <Eye className="h-4 w-4 mr-2" />
-                          Ver Detalhes
-                        </Button>
+                              Ver Detalhes
+                            </Button>
                       </DialogTrigger>
                     </Dialog>
                   </div>
@@ -300,8 +349,8 @@ export default function CatalogPage() {
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                         {product.description}
                       </p>
-                    </div>
-                  </div>
+                          </div>
+                        </div>
 
                   {/* Categories */}
                   <div className="flex flex-wrap gap-1 mb-3">
@@ -315,9 +364,9 @@ export default function CatalogPage() {
                   {/* Product Meta */}
                   <div className="flex items-center justify-end text-sm text-muted-foreground">
                     <span>{new Date(product.createdAt).toLocaleDateString('pt-BR')}</span>
-                  </div>
-                </CardHeader>
-              </Card>
+                        </div>
+                      </CardHeader>
+                    </Card>
             ))}
           </div>
         )}
@@ -357,63 +406,85 @@ export default function CatalogPage() {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           {selectedProduct && (
             <>
-              <DialogHeader>
+                    <DialogHeader>
                 <DialogTitle className="text-2xl">{selectedProduct.name}</DialogTitle>
                 <DialogDescription className="text-base">
                   {new Date(selectedProduct.createdAt).getFullYear()}
-                </DialogDescription>
-              </DialogHeader>
+                      </DialogDescription>
+                    </DialogHeader>
 
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-6">
+                      <div className="grid md:grid-cols-2 gap-6">
                   {/* Imagem Principal */}
-                  <div>
-                    <Image
+                        <div>
+                          <Image
                       src={getProductImage(selectedProduct)}
                       alt={selectedProduct.name}
-                      width={600}
-                      height={400}
-                      className="w-full rounded-lg"
-                    />
-                  </div>
+                            width={600}
+                            height={400}
+                            className="w-full rounded-lg"
+                          />
+                        </div>
 
                   {/* Detalhes do Produto */}
-                  <div className="space-y-4">
-                    <div>
+                        <div className="space-y-4">
+                          <div>
                       <h4 className="font-semibold mb-2 text-foreground">Descrição do Produto</h4>
                       <p className="text-muted-foreground">{selectedProduct.description}</p>
-                    </div>
+                          </div>
 
-                    <div>
+                          <div>
                       <h4 className="font-semibold mb-2 text-foreground">Categorias</h4>
-                      <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2">
                         {selectedProduct.categories.map((cat) => (
                           <Badge key={cat.category.id} variant="secondary">
                             {cat.category.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
 
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <h4 className="font-semibold mr-2 text-foreground">Avaliação:</h4>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <h4 className="font-semibold mr-2 text-foreground">Avaliação:</h4>
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
+                              <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            ))}
+                          </div>
+
+                          {/* Botões de Download */}
+                          <div className="pt-4">
+                            <h4 className="font-semibold mb-3 text-foreground">Downloads Disponíveis</h4>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <Button 
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                onClick={() => handleDownloadPSD(selectedProduct)}
+                              >
+                                <Download className="mr-2 h-4 w-4" />
+                                Download PSD
+                            </Button>
+                              <Button 
+                                variant="outline"
+                                className="border-green-600 text-green-600 hover:bg-green-50"
+                                onClick={() => handleDownloadCanva(selectedProduct)}
+                              >
+                                <Download className="mr-2 h-4 w-4" />
+                                Download Canva
+                            </Button>
+                            </div>
+                          </div>
 
 
-                  </div>
-                </div>
+                          </div>
+                        </div>
 
                 {/* Galeria de Imagens */}
                 {selectedProduct.assets && selectedProduct.assets.length > 1 && (
-                  <div>
+                        <div>
                     <h4 className="font-semibold mb-4 text-foreground">Galeria do Produto</h4>
-                    <div className="grid md:grid-cols-3 gap-4">
+                          <div className="grid md:grid-cols-3 gap-4">
                       {selectedProduct.assets.map((asset, index) => (
                         <div key={asset.id} className="relative aspect-video rounded-lg overflow-hidden">
-                          <Image
+                              <Image
                             src={asset.uri}
                             alt={asset.label || `${selectedProduct.name} - Imagem ${index + 1}`}
                             fill
@@ -425,11 +496,11 @@ export default function CatalogPage() {
                             </div>
                           )}
                         </div>
-                      ))}
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
-              </div>
             </>
           )}
         </DialogContent>

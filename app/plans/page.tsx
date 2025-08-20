@@ -12,7 +12,7 @@ export default function PlansPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")
 
   const plans = [
-    {
+    /*{{
       id: "basic",
       name: "Básico",
       icon: <Zap className="h-6 w-6" />,
@@ -28,27 +28,26 @@ export default function PlansPage() {
         "Guias de marca simples",
       ],
       limitations: ["Sem acesso a conteúdo premium", "Sem consultoria personalizada", "Sem prioridade no suporte"],
-    },
+    },*/  
     {
       id: "professional",
       name: "Profissional",
       icon: <Star className="h-6 w-6" />,
       description: "Para empresas em crescimento que precisam de mais recursos",
-      monthlyPrice: 197,
-      yearlyPrice: 1970,
+      monthlyPrice: 35,
+      yearlyPrice: 299,
       popular: true,
       features: [
         "Acesso completo ao catálogo",
-        "20 downloads por mês",
+        "5 downloads por dia",
         "Suporte prioritário",
-        "Templates premium",
         "Guias de marca avançados",
-        "Consultoria mensal (1h)",
-        "Acesso a webinars exclusivos",
+        
+        
       ],
-      limitations: ["Consultoria limitada a 1h/mês"],
+     
     },
-    {
+    /*{{
       id: "enterprise",
       name: "Empresarial",
       icon: <Crown className="h-6 w-6" />,
@@ -68,7 +67,7 @@ export default function PlansPage() {
         "Conteúdo personalizado",
       ],
       limitations: [],
-    },
+    },  */
   ]
 
   const features = [
@@ -166,7 +165,8 @@ export default function PlansPage() {
       {/* Plans Section */}
       <section className="py-20 bg-card">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="flex justify-center">
+            <div className="max-w-md w-full">
             {plans.map((plan) => (
               <Card
                 key={plan.id}
@@ -208,19 +208,7 @@ export default function PlansPage() {
                     </ul>
                   </div>
 
-                  {plan.limitations.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-3">Limitações:</h4>
-                      <ul className="space-y-2">
-                        {plan.limitations.map((limitation, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <span className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5">•</span>
-                            <span className="text-muted-foreground text-sm">{limitation}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  
 
                   <Button
                     className={`w-full ${plan.popular ? "bg-primary hover:bg-primary/90" : ""}`}
@@ -235,6 +223,7 @@ export default function PlansPage() {
                 </CardContent>
               </Card>
             ))}
+            </div>
           </div>
         </div>
       </section>
@@ -269,7 +258,7 @@ export default function PlansPage() {
         </div>
       </section>
 
-      {/* Comparison Table */}
+      {/* Comparison Table
       <section className="py-20 bg-card">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -322,7 +311,7 @@ export default function PlansPage() {
             </table>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Testimonials */}
       <section className="py-20 bg-background">

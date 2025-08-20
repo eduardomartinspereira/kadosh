@@ -5,25 +5,17 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
 import { Menu, Search, User, Phone } from "lucide-react"
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedFormat, setSelectedFormat] = useState("all")
-
-  const formats = [
-    { value: "all", label: "Todos os Formatos" },
-    { value: "image", label: "Imagens" },
-    { value: "video", label: "Vídeos" },
-    { value: "template", label: "Templates" },
-  ]
 
   const handleSearch = () => {
     // Implement search logic, e.g., redirect to catalog with search params
-    console.log("Searching:", searchTerm, "Format:", selectedFormat)
-    // Example: router.push(`/catalog?search=${searchTerm}&format=${selectedFormat}`);
+    console.log("Searching:", searchTerm)
+    // Example: router.push(`/catalog?search=${searchTerm}`);
   }
 
   return (
@@ -50,18 +42,7 @@ export function Header() {
               }}
               className="flex-grow border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-foreground placeholder:text-muted-foreground"
             />
-            <Select value={selectedFormat} onValueChange={setSelectedFormat}>
-              <SelectTrigger className="w-[120px] border-none focus:ring-0 focus:ring-offset-0 bg-transparent text-foreground">
-                <SelectValue placeholder="Formato" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                {formats.map((format) => (
-                  <SelectItem key={format.value} value={format.value}>
-                    {format.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
             <Button size="sm" onClick={handleSearch}>
               Pesquisar
             </Button>
@@ -107,18 +88,7 @@ export function Header() {
                     Buscar
                   </Button>
                 </div>
-                <Select value={selectedFormat} onValueChange={setSelectedFormat}>
-                  <SelectTrigger className="w-full bg-background border-border text-foreground">
-                    <SelectValue placeholder="Formato" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
-                    {formats.map((format) => (
-                      <SelectItem key={format.value} value={format.value}>
-                        {format.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
 
                 {/* Mobile Navigation Links */}
                 {/* These links will be duplicated in SecondaryNavigation for desktop, but needed here for mobile */}

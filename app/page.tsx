@@ -97,7 +97,7 @@ export default function HomePage() {
       </section>
 
       {/* Original Services Preview - Now focused on general design services */}
-      <section className="py-20 bg-background">
+     {/* <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">Formatos Disponíveis</h2>
@@ -110,7 +110,7 @@ export default function HomePage() {
             <Card className="hover:shadow-lg transition-shadow bg-card border-border">
               <CardHeader>
                 <Image
-                  src="/placeholder.svg?height=200&width=400&text=PSD+Files"
+                  src="/imagemPsd2.png"
                   alt="Arquivos PSD"
                   width={400}
                   height={200}
@@ -128,7 +128,7 @@ export default function HomePage() {
             <Card className="hover:shadow-lg transition-shadow bg-card border-border">
               <CardHeader>
                 <Image
-                  src="/placeholder.svg?height=200&width=400&text=PNG+Files"
+                  src="/imagemPng.png"
                   alt="Arquivos PNG"
                   width={400}
                   height={200}
@@ -171,7 +171,7 @@ export default function HomePage() {
             </Button>
           </div>
         </div>
-      </section>
+      </section> /*`
 
       {/* CTA Section - Adapted to dark theme */}
       <section className="py-20 bg-primary text-primary-foreground">
