@@ -1,41 +1,54 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { SecondaryNavigation } from "@/components/secondary-navigation" // Importar o novo componente
+import { Footer } from '@/components/footer';
+import { Header } from '@/components/header';
+import { SecondaryNavigation } from '@/components/secondary-navigation'; // Importar o novo componente
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import type React from 'react';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import './globals.css';
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Kadosh - Biblioteca Digital de Artes Cristãs",
-  description:
-    "Explore uma vasta coleção de obras de arte cristã digital. Kadosh oferece recursos exclusivos e conhecimento profundo sobre arte sacra.",
-  keywords: "arte cristã, biblioteca digital, obras de arte, Kadosh",
-  authors: [{ name: "Kadosh" }],
-  openGraph: {
-    title: "Kadosh - Biblioteca Digital de Artes Cristãs",
-    description: "Explore uma vasta coleção de obras de arte cristã digital.",
-    type: "website",
-    locale: "pt_BR",
-  },
-    generator: 'v0.app'
-}
+    title: 'Kadosh - Biblioteca Digital de Artes Cristãs',
+    description:
+        'Explore uma vasta coleção de obras de arte cristã digital. Kadosh oferece recursos exclusivos e conhecimento profundo sobre arte sacra.',
+    keywords: 'arte cristã, biblioteca digital, obras de arte, Kadosh',
+    authors: [{ name: 'Kadosh' }],
+    openGraph: {
+        title: 'Kadosh - Biblioteca Digital de Artes Cristãs',
+        description:
+            'Explore uma vasta coleção de obras de arte cristã digital.',
+        type: 'website',
+        locale: 'pt_BR',
+    },
+    generator: 'v0.app',
+};
 
 export default function RootLayout({
-  children,
+    children,
 }: {
-  children: React.ReactNode
+    children: React.ReactNode;
 }) {
-  return (
-    <html lang="pt-BR" className="dark">
-      <body>
-        <Header />
-        <SecondaryNavigation /> {/* Adicionar a navegação secundária aqui */}
-        <main>{children}</main>
-        <Footer />
-      </body>
-    </html>
-  )
+    return (
+        <html lang="pt-BR" className="dark">
+            <body>
+                <Header />
+                <SecondaryNavigation />
+                <ToastContainer
+                    position="top-right"
+                    autoClose={3000}
+                    theme="light"
+                    newestOnTop
+                    closeOnClick
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                />
+                <main>{children}</main>
+                <Footer />
+            </body>
+        </html>
+    );
 }
