@@ -1,12 +1,12 @@
-import { prisma } from '@/lib/prisma';
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import NextAuth, { type NextAuthOptions } from 'next-auth';
+import type { User as NextAuthUser } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import { prisma } from '../../../../lib/prisma';
 
-export const authOptions = {
-    adapter: PrismaAdapter(prisma),
+export const authOptions: NextAuthOptions = {
     session: { strategy: 'jwt' },
+    secret: process.env.NEXTAUTH_SECRET,
     providers: [
         Credentials({
             name: 'Email e senha',
@@ -15,44 +15,50 @@ export const authOptions = {
                 password: { label: 'Senha', type: 'password' },
             },
             async authorize(credentials) {
-                console.log(credentials, 'credenciais');
                 if (!credentials?.email || !credentials?.password) return null;
+
                 const user = await prisma.user.findUnique({
                     where: { email: credentials.email },
                 });
-                console.log(user);
-                if (!user || !user.password) return null;
+                if (!user?.password) return null;
+
                 const ok = await bcrypt.compare(
                     credentials.password,
                     user.password
                 );
                 if (!ok) return null;
+
                 return {
                     id: user.id,
                     email: user.email,
                     name: user.name ?? undefined,
+                    //lastName: user.lastName ?? undefined,
                     role: user.role,
-                };
+                } as unknown as NextAuthUser;
             },
         }),
     ],
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
-                token.id = (user as any).id;
-                token.role = (user as any).role;
+                const u = user as unknown as { id?: string | number; role?: unknown };
+                const t = token as unknown as Record<string, unknown>;
+                if (u.id !== undefined) t.id = u.id;
+                if (u.role !== undefined) t.role = u.role;
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
-                (session.user as any).id = token.id;
-                (session.user as any).role = token.role;
+                const su = session.user as unknown as Record<string, unknown>;
+                const t = token as unknown as Record<string, unknown>;
+                su.id = t.id;
+                su.role = t.role;
             }
             return session;
         },
     },
-} satisfies NextAuthOptions;
+};
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

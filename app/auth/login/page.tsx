@@ -1,5 +1,6 @@
 'use client';
 
+import { useCustomSession } from '@/app/context/SessionContext';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -31,6 +32,8 @@ export default function LoginPage() {
         rememberMe: false,
     });
     const router = useRouter();
+
+    const { setSession } = useCustomSession()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -67,6 +70,13 @@ export default function LoginPage() {
             }
 
             if (res.ok) {
+                // 👇 busca sessão atualizada
+                const updatedSession = await fetch('/api/auth/session')
+                    .then((r) => r.json());
+
+                // 👇 seta no contexto
+                setSession(updatedSession);
+
                 toast.success('Login realizado com sucesso!');
                 router.push('/plans');
             } else {
@@ -102,6 +112,7 @@ export default function LoginPage() {
 
             <div className="w-full max-w-md">
                 {/* ... (header e textos iguais) */}
+
 
                 <Card className="bg-card border-border">
                     <CardHeader>
