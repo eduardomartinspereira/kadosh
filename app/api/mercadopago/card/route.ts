@@ -1,6 +1,7 @@
 // app/api/mercadopago/card/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { mercadoPagoService } from '../../../../lib/mercadopago';
+import { sendPaymentConfirmationEmail } from '../../../../lib/mailer';
 
 export const runtime = 'nodejs';
 
@@ -74,6 +75,31 @@ export async function POST(req: NextRequest) {
         name: payerName,
       },
     });
+
+    // === Enviar email se o pagamento foi aprovado ===
+    if (mpData.status === 'approved' || mpData.status === 'authorized') {
+      try {
+        console.log('[CARD-API] 📧 Enviando email de confirmação para:', payerEmail);
+        
+        const emailSent = await sendPaymentConfirmationEmail({
+          to: payerEmail,
+          name: payerName,
+          orderId: externalReference,
+          amount: amount,
+          description: description,
+          receiptUrl: mpData.point_of_interaction?.transaction_data?.ticket_url,
+        });
+        
+        if (emailSent) {
+          console.log('[CARD-API] ✅ Email enviado com sucesso');
+        } else {
+          console.log('[CARD-API] ⚠️ Email não foi enviado (configuração SMTP ausente)');
+        }
+      } catch (emailError) {
+        console.error('[CARD-API] ❌ Erro ao enviar email:', emailError);
+        // Não falha o pagamento se o email falhar
+      }
+    }
 
     // retorna o objeto do MP (id, status, etc.)
     return NextResponse.json(mpData, { status: 200 });

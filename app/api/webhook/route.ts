@@ -155,19 +155,24 @@ export async function POST(req: NextRequest) {
 
       if (to) {
         try {
-          const res = await sendPaymentConfirmationEmail({
+          const emailSent = await sendPaymentConfirmationEmail({
             to,
             name,
             orderId,
             amount,
-            items,
+            description: items.length > 0 ? items[0].title : 'Pagamento',
             receiptUrl,
           });
-          markSent(String(details.id));
-          console.log('[WEBHOOK] ✅ e-mail enviado', {
-            to,
-            messageId: (res as any)?.messageId,
-          });
+          
+          if (emailSent) {
+            markSent(String(details.id));
+            console.log('[WEBHOOK] ✅ e-mail enviado', {
+              to,
+              orderId,
+            });
+          } else {
+            console.log('[WEBHOOK] ⚠️ Email não foi enviado (configuração SMTP ausente)');
+          }
         } catch (err) {
           console.error('[WEBHOOK] ❌ falha ao enviar e-mail', err);
         }

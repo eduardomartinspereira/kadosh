@@ -1,6 +1,7 @@
 // app/api/pix-payment/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { mercadoPagoService } from '../../../lib/mercadopago';
+import { sendPaymentConfirmationEmail } from '../../../lib/mailer';
 
 export const runtime = 'nodejs';
 
@@ -40,6 +41,30 @@ export async function POST(req: NextRequest) {
     });
 
     console.log('[PIX-API] PIX criado com sucesso:', pix);
+
+    // === Enviar email de confirmação do PIX ===
+    try {
+      console.log('[PIX-API] 📧 Enviando email de confirmação PIX para:', email);
+      
+      const emailSent = await sendPaymentConfirmationEmail({
+        to: String(email),
+        name: String(name),
+        orderId: `PIX_${pix.id || Date.now()}`,
+        amount: nAmount,
+        description: 'Pagamento PIX',
+        receiptUrl: undefined, // PIX não tem comprovante de pagamento
+      });
+      
+      if (emailSent) {
+        console.log('[PIX-API] ✅ Email enviado com sucesso');
+      } else {
+        console.log('[PIX-API] ⚠️ Email não foi enviado (configuração SMTP ausente)');
+      }
+    } catch (emailError) {
+      console.error('[PIX-API] ❌ Erro ao enviar email:', emailError);
+      // Não falha o PIX se o email falhar
+    }
+
     return NextResponse.json({ success: true, data: pix }, { status: 200 });
   } catch (err: any) {
     console.error('[PIX-API] erro', err);
