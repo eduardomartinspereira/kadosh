@@ -4,7 +4,7 @@ import type { User as NextAuthUser } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { prisma } from '../../../../lib/prisma';
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
     session: { strategy: 'jwt' },
     secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-change-in-production',
     providers: [

@@ -1,21 +1,21 @@
 // app/lib/prisma.ts (ajuste o caminho conforme seu projeto)
 import { PrismaClient } from '@prisma/client';
 
-// Permite reaproveitar a instância em dev/hmr (Next.js)
-const globalForPrisma = global as unknown as { prisma?: PrismaClient };
+// Configuração global do Prisma
+declare global {
+  var __prisma: PrismaClient | undefined;
+}
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log:
-      process.env.NODE_ENV === 'development'
-        ? ['query', 'error', 'warn']
-        : ['error'],
-  });
+// Singleton do Prisma para evitar múltiplas conexões
+export const prisma = globalThis.__prisma || new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
 
 if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
+  globalThis.__prisma = prisma;
 }
+
+export default prisma;
 
 // ---- Atalhos/Services -------------------------------------------------------
 // Alias direto para o modelo Payment

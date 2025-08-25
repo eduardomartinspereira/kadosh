@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '../../../lib/prisma'
 
-const prisma = new PrismaClient()
-
-// GET - Listar todas as categorias
+// GET - Listar categorias
 export async function GET() {
   try {
     const categories = await prisma.category.findMany({
