@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mercadoPagoService } from '../../lib/mercadopago';
+import { mercadoPagoService } from '../../../lib/mercadopago';
 
 export const runtime = 'nodejs';
 
