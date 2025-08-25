@@ -13,7 +13,7 @@ type Props = {
 
 export default function TransparentForm({ amount, description, publicKey }: Props) {
     const [loading, setLoading] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | 'boleto'>('card');
+    const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix'>('card');
     const [email, setEmail] = useState('');
     const [cpf, setCpf] = useState('');
     const [cardNumber, setCardNumber] = useState('');
@@ -274,13 +274,12 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
         e.preventDefault();
         if (paymentMethod === 'card') return payWithCard();
         if (paymentMethod === 'pix') return payWithPix();
-        alert('Funcionalidade boleto em desenvolvimento.');
     };
 
     return (
         <form onSubmit={onSubmit} className="space-y-4">
             {/* Métodos de pagamento */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
                 <button
                     type="button"
                     onClick={() => setPaymentMethod('card')}
@@ -294,13 +293,6 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
                     className={`border rounded p-2 ${paymentMethod === 'pix' ? 'border-primary bg-primary/10' : ''}`}
                 >
                     PIX
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setPaymentMethod('boleto')}
-                    className={`border rounded p-2 ${paymentMethod === 'boleto' ? 'border-primary bg-primary/10' : ''}`}
-                >
-                    Boleto
                 </button>
             </div>
 

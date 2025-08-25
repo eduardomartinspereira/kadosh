@@ -128,7 +128,12 @@ export default function CheckoutPage() {
             : 0;
 
     const handleChange = (field: string, value: string | boolean) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
+        console.log('handleChange called:', field, value);
+        setFormData((prev) => {
+            const newData = { ...prev, [field]: value };
+            console.log('New formData:', newData);
+            return newData;
+        });
     };
 
     // Public Key do MP vinda do .env (NEXT_PUBLIC_MP_PUBLIC_KEY)
@@ -269,17 +274,20 @@ export default function CheckoutPage() {
                                             <Checkbox
                                                 id="acceptTerms"
                                                 checked={formData.acceptTerms}
-                                                onCheckedChange={(checked) =>
-                                                    handleChange(
-                                                        'acceptTerms',
-                                                        Boolean(checked)
-                                                    )
-                                                }
+                                                onCheckedChange={(checked) => {
+                                                    console.log('Checkbox clicked:', checked);
+                                                    handleChange('acceptTerms', Boolean(checked));
+                                                }}
                                             />
                                             <div className="grid gap-1.5 leading-none">
                                                 <Label
                                                     htmlFor="acceptTerms"
-                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                    onClick={() => {
+                                                        const newValue = !formData.acceptTerms;
+                                                        console.log('Label clicked, new value:', newValue);
+                                                        handleChange('acceptTerms', newValue);
+                                                    }}
                                                 >
                                                     Aceito os termos e condições
                                                 </Label>
@@ -301,6 +309,11 @@ export default function CheckoutPage() {
                                                     .
                                                 </p>
                                             </div>
+                                        </div>
+                                        
+                                        {/* Debug info - remover depois */}
+                                        <div className="text-xs text-gray-500">
+                                            Status do checkbox: {formData.acceptTerms ? 'Marcado' : 'Desmarcado'}
                                         </div>
                                     </div>
 
