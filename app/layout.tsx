@@ -1,15 +1,13 @@
 import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
-import { SecondaryNavigation } from '@/components/secondary-navigation'; // Importar o novo componente
+import { SecondaryNavigation } from '@/components/secondary-navigation';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import type React from 'react';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import './globals.css';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './api/auth/[...nextauth]/route';
-import { SessionProviderCustom } from './context/SessionContext';
+import AuthProvider from './providers';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -37,23 +35,16 @@ export default async function RootLayout({
     const session = await getServerSession(authOptions);
     return (
         <html lang="pt-BR" className="dark">
+            <head>
+                <script src="https://sdk.mercadopago.com/js/v2"></script>
+            </head>
             <body>
-                <SessionProviderCustom initialSession={session}>
+                <AuthProvider session={session}>
                     <Header />
                     <SecondaryNavigation />
-                    <ToastContainer
-                        position="top-right"
-                        autoClose={3000}
-                        theme="light"
-                        newestOnTop
-                        closeOnClick
-                        pauseOnFocusLoss
-                        draggable
-                        pauseOnHover
-                    />
                     <main>{children}</main>
                     <Footer />
-                </SessionProviderCustom>
+                </AuthProvider>
             </body>
         </html>
     );

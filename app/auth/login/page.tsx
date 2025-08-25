@@ -1,6 +1,5 @@
 'use client';
 
-import { useCustomSession } from '@/app/context/SessionContext';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -17,7 +16,8 @@ import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 
 // 👇 toastify
 import { toast } from 'react-toastify';
@@ -32,51 +32,36 @@ export default function LoginPage() {
         rememberMe: false,
     });
     const router = useRouter();
+    const { data: session, status } = useSession();
 
-    const { setSession } = useCustomSession()
+    // Redireciona se já estiver logado
+    useEffect(() => {
+        if (status === 'authenticated' && session) {
+            router.push('/plans');
+        }
+    }, [status, session, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            const { csrfToken } = await fetch('/api/auth/csrf', {
-                cache: 'no-store',
-            }).then((r) => r.json());
-
-            const res = await fetch('/api/auth/callback/credentials', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    csrfToken,
-                    email: formData.email,
-                    password: formData.password,
-                    callbackUrl: '/plans',
-                }),
+            const result = await signIn('credentials', {
+                email: formData.email,
+                password: formData.password,
+                redirect: false,
             });
 
-            const finalUrl = new URL(res.url, window.location.origin);
-            const errorCode = finalUrl.searchParams.get('error');
-
-            if (errorCode) {
+            if (result?.error) {
                 toast.error(
-                    errorCode === 'CredentialsSignin'
+                    result.error === 'CredentialsSignin'
                         ? 'E-mail ou senha inválidos.'
                         : 'Falha ao entrar. Tente novamente.'
                 );
                 return;
             }
 
-            if (res.ok) {
-                // 👇 busca sessão atualizada
-                const updatedSession = await fetch('/api/auth/session')
-                    .then((r) => r.json());
-
-                // 👇 seta no contexto
-                setSession(updatedSession);
-
+            if (result?.ok) {
                 toast.success('Login realizado com sucesso!');
                 router.push('/plans');
             } else {

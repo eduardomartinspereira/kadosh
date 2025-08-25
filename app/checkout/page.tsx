@@ -2,8 +2,9 @@
 
 import { ArrowLeft, Check, Shield } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 
 import {
     Card,
@@ -81,23 +82,36 @@ const plans: Record<string, Plan> = {
 
 export default function CheckoutPage() {
     const searchParams = useSearchParams();
+    const router = useRouter();
+    const { data: session, status } = useSession();
     const planId = (searchParams.get('plan') || 'basic').toLowerCase();
     const billingCycle = (searchParams.get('cycle') || 'monthly').toLowerCase();
 
     useEffect(() => {
-        try {
-            const user =
-                typeof window !== 'undefined'
-                    ? localStorage.getItem('user')
-                    : null;
-            if (!user) {
-                alert(
-                    'Você precisa estar logado para acessar esta página. Faça login primeiro.'
-                );
-                window.location.href = '/auth/login';
-            }
-        } catch (_) {}
-    }, []);
+        if (status === 'loading') return; // Aguarda carregar
+        
+        if (status === 'unauthenticated' || !session) {
+            router.push('/auth/login');
+            return;
+        }
+    }, [status, session, router]);
+
+    // Mostra loading enquanto verifica autenticação
+    if (status === 'loading') {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-foreground">Verificando autenticação...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Redireciona se não estiver autenticado
+    if (status === 'unauthenticated' || !session) {
+        return null; // Será redirecionado pelo useEffect
+    }
 
     const [formData, setFormData] = useState({
         acceptTerms: false,

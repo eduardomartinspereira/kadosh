@@ -7,20 +7,23 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { Menu, Search, User } from "lucide-react"
 import type { Session } from "next-auth"
-import { signOut } from "next-auth/react" // 👈 importa o signOut
-import { useCustomSession } from "@/app/context/SessionContext"
+import { signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const { session, setSession } = useCustomSession()
+  const { data: session } = useSession()
 
   const router = useRouter();
 
   const handleSearch = () => {
     console.log("Searching:", searchTerm)
+  }
+
+  const handleSignOut = async () => {
+    await signOut({ redirect: false });
+    router.replace("/");
   }
 
   return (
@@ -42,11 +45,7 @@ export function Header() {
                 Olá, {session.user?.name ?? "usuário"}
               </span>
               <Button
-                onClick={async () => {
-                  await signOut({ redirect: false }); // encerra a sessão no NextAuth sem navegar
-                  setSession(null);                    // zera seu contexto local
-                  router.replace("/");                 // redireciona para home
-                }}
+                onClick={handleSignOut}
                 aria-label="Sair da conta"
               >
                 Sair
