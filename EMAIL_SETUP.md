@@ -6,6 +6,7 @@ O sistema agora usa **nodemailer** diretamente e envia emails automaticamente qu
 - ✅ **Pagamento com cartão é aprovado**
 - ✅ **PIX é gerado**
 - ✅ **Webhook do Mercado Pago confirma pagamento aprovado**
+- ❌ **Pagamento é recusado (com motivo detalhado)**
 
 ## 🔧 Configuração Necessária
 
@@ -73,8 +74,14 @@ curl -X POST http://localhost:3000/api/test-email \
 
 Os logs de email aparecem no console do servidor:
 
+### Email de Confirmação:
 ```
 [MAILER] ✅ Email enviado com sucesso: { messageId: "...", to: "cliente@email.com", orderId: "..." }
+```
+
+### Email de Recusa:
+```
+[MAILER] ✅ Email de recusa enviado com sucesso: { messageId: "...", to: "cliente@email.com", orderId: "...", rejectionReason: "Saldo insuficiente" }
 ```
 
 Se houver erro:
@@ -180,6 +187,8 @@ Se ainda tiver problemas:
 
 ## 🔄 Mudanças Recentes
 
+- ✅ **Emails de pagamento recusado** com motivo detalhado
+- ✅ **Tradução automática** dos códigos de erro do Mercado Pago
 - ✅ **Suporte para novas variáveis de email** (EMAIL_USER, EMAIL_PASS, EMAIL_FROM)
 - ✅ **Compatibilidade com variáveis antigas** (SMTP_*)
 - ✅ **Simplificado para usar nodemailer diretamente**

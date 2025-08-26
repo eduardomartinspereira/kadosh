@@ -2,11 +2,33 @@
 // app/api/webhook/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { mercadoPagoService } from '../../../lib/mercadopago';
-import { sendPaymentConfirmationEmail } from '../../../lib/mailer';
+import { sendPaymentConfirmationEmail, sendPaymentRejectedEmail } from '../../../lib/mailer';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
   
+// Função para traduzir códigos de erro do Mercado Pago
+function getRejectionReason(statusDetail: string): string {
+  const rejectionReasons: { [key: string]: string } = {
+    'cc_rejected_bad_filled_date': 'Data de validade incorreta',
+    'cc_rejected_bad_filled_other': 'Dados do cartão incorretos',
+    'cc_rejected_bad_filled_security_code': 'Código de segurança incorreto',
+    'cc_rejected_blacklist': 'Cartão bloqueado',
+    'cc_rejected_call_for_authorize': 'Cartão requer autorização',
+    'cc_rejected_card_disabled': 'Cartão desabilitado',
+    'cc_rejected_card_error': 'Erro no cartão',
+    'cc_rejected_duplicated_payment': 'Pagamento duplicado',
+    'cc_rejected_high_risk': 'Pagamento rejeitado por risco',
+    'cc_rejected_insufficient_amount': 'Saldo insuficiente',
+    'cc_rejected_invalid_installments': 'Parcelamento inválido',
+    'cc_rejected_max_attempts': 'Máximo de tentativas excedido',
+    'cc_rejected_other_reason': 'Cartão recusado',
+    'cc_rejected_bad_filled_card_number': 'Número do cartão incorreto',
+  };
+
+  return rejectionReasons[statusDetail] || 'Pagamento recusado pelo banco';
+}
+
 // --- Utils -------------------------------------------------------------------
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -180,17 +202,49 @@ export async function POST(req: NextRequest) {
         console.warn('[WEBHOOK] ⚠️ e-mail do comprador não encontrado/é placeholder — não enviado');
       }
     }
-  } else if (details.status === 'rejected') {
-    console.log('[WEBHOOK] ❌ pagamento rejeitado', {
-      id: details.id,
-      status_detail: (details as any).status_detail,
-    });
-  } else if (details.status === 'in_process') {
-    console.log('[WEBHOOK] ⏳ pagamento em análise/processamento');
-  } else if (details.status === 'cancelled') {
-    console.log('[WEBHOOK] ⏹️ pagamento cancelado');
-  } else {
-    console.log('[WEBHOOK] 📋 status:', details.status);
+  }
+
+  // === Enviar email se o pagamento foi recusado ===
+  if (details.status === 'rejected') {
+    if (wasRecentlySent(String(details.id))) {
+      console.log('[WEBHOOK] ⏭️ e-mail de recusa já enviado recentemente, ignorando duplicado');
+    } else {
+      const to = details.payer?.email;
+      const name = details.payer?.name || 'Cliente';
+      const orderId = details.external_reference || String(details.id);
+      const amount = details.transaction_amount || 0;
+      const items = details.additional_info?.items || [];
+      const rejectionReason = getRejectionReason(details.status_detail || 'cc_rejected_other_reason');
+
+      if (to) {
+        try {
+          const emailSent = await sendPaymentRejectedEmail({
+            to,
+            name,
+            orderId,
+            amount,
+            description: items.length > 0 ? items[0].title : 'Pagamento',
+            rejectionReason,
+            statusDetail: details.status_detail,
+          });
+
+          if (emailSent) {
+            markSent(String(details.id));
+            console.log('[WEBHOOK] ✅ e-mail de recusa enviado', {
+              to,
+              orderId,
+              rejectionReason,
+            });
+          } else {
+            console.log('[WEBHOOK] ⚠️ Email de recusa não foi enviado (configuração SMTP ausente)');
+          }
+        } catch (err) {
+          console.error('[WEBHOOK] ❌ falha ao enviar e-mail de recusa', err);
+        }
+      } else {
+        console.warn('[WEBHOOK] ⚠️ e-mail do comprador não encontrado/é placeholder — email de recusa não enviado');
+      }
+    }
   }
 
   // Marcar webhook como processado
