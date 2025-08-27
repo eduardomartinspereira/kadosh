@@ -13,6 +13,24 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
+  images: {
+    unoptimized: false,
+    domains: [
+      'images.unsplash.com',
+      'picsum.photos',
+      'loremflickr.com',
+      'placehold.co',
+      'placekitten.com'
+    ],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 };
 
 module.exports = nextConfig;

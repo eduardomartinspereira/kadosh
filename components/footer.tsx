@@ -35,9 +35,11 @@ export function Footer() {
           {/* Company Info */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center space-x-2 mb-6">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">KD</span>
-              </div>
+              <img 
+                src="/logoKadosh.svg" 
+                alt="Kadosh Logo" 
+                className="h-8 w-auto"
+              />
               <span className="font-bold text-xl">Kadosh</span>
             </Link>
             <p className="text-muted-foreground mb-6 leading-relaxed">

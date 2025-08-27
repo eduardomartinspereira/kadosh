@@ -14,10 +14,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Search, Filter, Share2, Eye, Star, Image as ImageIcon, Download } from "lucide-react"
+import { Search, Filter, Share2, Eye, Star, Image as ImageIcon, Download, AlertCircle } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { WhatsAppButton } from "@/components/whatsapp-button"
+import { useSession } from "next-auth/react"
+import { showToast } from "../../lib/toast-config" 
+
+
+
 
 interface Category {
   id: string
@@ -31,6 +36,7 @@ interface ProductAsset {
   label?: string
   uri: string
   type: string
+  sizeBytes?: bigint | null
   width?: number
   height?: number
   previewUri?: string
@@ -50,6 +56,9 @@ interface Product {
     width?: number
     height?: number
   }>
+  arquivoPdf?: string
+  arquivoPng?: string
+  arquivoPsd?: string
   createdAt: string
   categories: Array<{
     category: Category
@@ -58,12 +67,14 @@ interface Product {
 }
 
 export default function CatalogPage() {
+  const { data: session, status } = useSession()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [allProducts, setAllProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const [downloadStatus, setDownloadStatus] = useState<any>(null)
   const [pagination, setPagination] = useState({
     page: 1,
     total: 0,
@@ -107,6 +118,25 @@ export default function CatalogPage() {
 
     fetchAllProducts()
   }, [])
+
+  // Buscar status dos downloads do usuário
+  useEffect(() => {
+    if ((session?.user as any)?.id) {
+      const fetchDownloadStatus = async () => {
+        try {
+          const response = await fetch('/api/downloads/status')
+          if (response.ok) {
+            const data = await response.json()
+            setDownloadStatus(data.data)
+          }
+        } catch (error) {
+          console.error('Erro ao buscar status dos downloads:', error)
+        }
+      }
+
+      fetchDownloadStatus()
+    }
+  }, [session])
 
   // Filtrar produtos em tempo real
   const filteredProducts = useMemo(() => {
@@ -153,56 +183,191 @@ export default function CatalogPage() {
   }
 
   const getProductImage = (product: Product) => {
-    if (product.mainImage) {
-      return product.mainImage
+    try {
+      // Priorizar imagem principal
+      if (product.mainImage && product.mainImage.trim() !== '') {
+        return product.mainImage
+      }
+      
+      // Usar primeira imagem do array de imagens
+      if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+        const firstImage = product.images[0]
+        if (firstImage?.url && firstImage.url.trim() !== '') {
+          return firstImage.url
+        }
+      }
+      
+      // Fallback para imagem local
+      return '/placeholder.jpg'
+    } catch (error) {
+      console.warn('Erro ao obter imagem do produto:', product.name, error)
+      return '/placeholder.jpg'
     }
-    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-      return product.images[0].url
+  }
+
+  // Componente de imagem com fallback
+  const ProductImage = ({ product, className = "" }: { product: Product; className?: string }) => {
+    const [imgSrc, setImgSrc] = useState(getProductImage(product))
+    const [hasError, setHasError] = useState(false)
+
+    const handleImageError = () => {
+      if (!hasError) {
+        setHasError(true)
+        setImgSrc('/placeholder.jpg')
+      }
     }
-    return '/placeholder.svg?height=400&width=600'
+
+    return (
+      <Image
+        src={imgSrc}
+        alt={product.name}
+        fill
+        className={className}
+        onError={handleImageError}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        quality={85}
+      />
+    )
   }
 
   const getProductCategories = (product: Product) => {
     return product.categories.map(cat => cat.category.name).join(', ')
   }
 
-  // Funções de download
-  const handleDownloadPSD = (product: Product) => {
-    // Simular download do arquivo PSD
-    console.log('Download PSD:', product.name)
+  // Funções de download atualizadas
+  const handleDownloadPDF = async (product: Product) => {
+    console.log('🔍 Debug session:', session)
+    console.log('🔍 Debug session.user:', session?.user)
+    console.log('🔍 Debug session.user.id:', (session?.user as any)?.id)
     
-    // Aqui você pode implementar a lógica real de download
-    // Por exemplo, redirecionar para uma API de download ou abrir um link
-    const downloadUrl = `/api/download/psd/${product.id}`
-    
-    // Criar um link temporário para download
-    const link = document.createElement('a')
-    link.href = downloadUrl
-    link.download = `${product.name}.psd`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    alert(`Download PSD iniciado para: ${product.name}`)
+    if (!(session?.user as any)?.id) {
+      showToast.userNotLoggedIn()
+      return
+    }
+
+    // Verificar se há arquivo PDF disponível
+    if (!product.arquivoPdf) {
+      showToast.downloadError('Arquivo PDF não disponível para este produto')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/download/pdf/${product.id}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        // Atualizar status dos downloads
+        const statusResponse = await fetch('/api/downloads/status')
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json()
+          setDownloadStatus(statusData.data)
+        }
+
+        // Iniciar download
+        const link = document.createElement('a')
+        link.href = data.downloadUrl
+        link.download = data.fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        showToast.downloadStarted(product.name, 'PDF')
+      } else {
+        showToast.downloadError(data.error)
+      }
+    } catch (error) {
+      console.error('Erro no download:', error)
+      showToast.genericError('Erro ao iniciar download')
+    }
   }
 
-  const handleDownloadCanva = (product: Product) => {
-    // Simular download para Canva
-    console.log('Download Canva:', product.name)
+  const handleDownloadPSD = async (product: Product) => {
+    console.log('🔍 Debug session:', session)
+    console.log('🔍 Debug session.user:', session?.user)
+    console.log('🔍 Debug session.user.id:', (session?.user as any)?.id)
     
-    // Aqui você pode implementar a lógica real de download para Canva
-    // Por exemplo, redirecionar para uma API específica do Canva
-    const canvaUrl = `/api/download/canva/${product.id}`
-    
-    // Criar um link temporário para download
-    const link = document.createElement('a')
-    link.href = canvaUrl
-    link.download = `${product.name}-canva.zip`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    alert(`Download Canva iniciado para: ${product.name}`)
+    if (!(session?.user as any)?.id) {
+      showToast.userNotLoggedIn()
+      return
+    }
+
+    // Verificar se há arquivo PSD disponível
+    if (!product.arquivoPsd) {
+      showToast.downloadError('Arquivo PSD não disponível para este produto')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/download/psd/${product.id}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        // Atualizar status dos downloads
+        const statusResponse = await fetch('/api/downloads/status')
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json()
+          setDownloadStatus(statusData.data)
+        }
+
+        // Iniciar download
+        const link = document.createElement('a')
+        link.href = data.downloadUrl
+        link.download = data.fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        showToast.downloadStarted(product.name, 'PSD')
+      } else {
+        console.error('🔍 Debug Frontend - Erro na API PSD:', data)
+        showToast.downloadError(data.error || 'Erro desconhecido na API PSD')
+      }
+    } catch (error) {
+      console.error('🔍 Debug Frontend - Erro no download PSD:', error)
+      showToast.genericError('Erro ao iniciar download PSD')
+    }
+  }
+
+  const handleDownloadPNG = async (product: Product) => {
+    if (!(session?.user as any)?.id) {
+      showToast.userNotLoggedIn()
+      return
+    }
+
+    // Verificar se há arquivo PNG disponível
+    if (!product.arquivoPng) {
+      showToast.downloadError('Arquivo PNG não disponível para este produto')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/download/png/${product.id}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        // Atualizar status dos downloads
+        const statusResponse = await fetch('/api/downloads/status')
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json()
+          setDownloadStatus(statusData.data)
+        }
+
+        // Iniciar download
+        const link = document.createElement('a')
+        link.href = data.downloadUrl
+        link.download = data.fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        showToast.downloadStarted(product.name, 'PNG')
+      } else {
+        showToast.downloadError(data.error)
+      }
+    } catch (error) {
+      console.error('Erro no download:', error)
+      showToast.genericError('Erro ao iniciar download')
+    }
   }
 
   // Calcular total de páginas para produtos filtrados
@@ -231,7 +396,7 @@ export default function CatalogPage() {
             {/* Search Input */}
             <div className="flex-1">
               <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform color -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                   placeholder="Buscar produtos..."
                 value={searchTerm}
@@ -264,6 +429,54 @@ export default function CatalogPage() {
             {loading ? 'Carregando...' : `${filteredProducts.length} produtos encontrados`}
           </div>
         </div>
+
+        {/* Status dos Downloads */}
+        {session?.user && downloadStatus && (
+          <div className="bg-card rounded-lg border p-6 mb-8">
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Status dos Downloads</h3>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">
+                  {downloadStatus.limits.daily.current}/{downloadStatus.limits.daily.max}
+                </div>
+                <div className="text-sm text-muted-foreground">Downloads Hoje</div>
+                <div className="text-xs text-muted-foreground">
+                  Restam: {downloadStatus.limits.daily.remaining}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">
+                  {downloadStatus.limits.monthly.current}/{downloadStatus.limits.monthly.max}
+                </div>
+                <div className="text-sm text-muted-foreground">Downloads Este Mês</div>
+                <div className="text-xs text-muted-foreground">
+                  Restam: {downloadStatus.limits.monthly.remaining}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-semibold text-foreground">
+                  {downloadStatus.subscription?.planName || ''}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {downloadStatus.subscription ? (
+                    <>
+                      {downloadStatus.subscription.billingPeriod === 'MONTHLY' ? 'Mensal' : 'Anual'}
+                      {downloadStatus.subscription.status === 'ACTIVE' && ' - Ativo'}
+                      {downloadStatus.subscription.status === 'TRIALING' && ' - Aguardando PIX'}
+                    </>
+                  ) : (
+                    'Não assinante'
+                  )}
+                </div>
+                {downloadStatus.subscription && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Válido até: {new Date(downloadStatus.subscription.currentPeriodEnd).toLocaleDateString('pt-BR')}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Products Grid */}
         {loading ? (
@@ -308,10 +521,8 @@ export default function CatalogPage() {
             {paginatedProducts.map((product) => (
               <Card key={product.id} className="group hover:shadow-lg transition-shadow">
                 <div className="relative aspect-video overflow-hidden rounded-t-lg">
-                          <Image
-                    src={getProductImage(product)}
-                    alt={product.name}
-                    fill
+                          <ProductImage
+                    product={product}
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   
@@ -417,13 +628,12 @@ export default function CatalogPage() {
                       <div className="grid md:grid-cols-2 gap-6">
                   {/* Imagem Principal */}
                         <div>
-                          <Image
-                      src={getProductImage(selectedProduct)}
-                      alt={selectedProduct.name}
-                            width={600}
-                            height={400}
-                            className="w-full rounded-lg"
-                          />
+                          <div className="relative w-full h-[400px] rounded-lg overflow-hidden">
+                            <ProductImage
+                      product={selectedProduct}
+                      className="w-full rounded-lg"
+                            />
+                          </div>
                         </div>
 
                   {/* Detalhes do Produto */}
@@ -454,23 +664,84 @@ export default function CatalogPage() {
                           {/* Botões de Download */}
                           <div className="pt-4">
                             <h4 className="font-semibold mb-3 text-foreground">Downloads Disponíveis</h4>
-                            <div className="flex flex-col sm:flex-row gap-3">
-                              <Button 
-                                className="bg-blue-600 hover:bg-blue-700 text-white"
-                                onClick={() => handleDownloadPSD(selectedProduct)}
-                              >
-                                <Download className="mr-2 h-4 w-4" />
-                                Download PSD
-                            </Button>
-                              <Button 
-                                variant="outline"
-                                className="border-green-600 text-green-600 hover:bg-green-50"
-                                onClick={() => handleDownloadCanva(selectedProduct)}
-                              >
-                                <Download className="mr-2 h-4 w-4" />
-                                Download Canva
-                            </Button>
-                            </div>
+                            
+                            {/* Verificar arquivo PSD disponível */}
+                            {selectedProduct.arquivoPsd && (
+                              <div className="mb-3">
+                                <Button 
+                                  className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
+                                  onClick={() => handleDownloadPSD(selectedProduct)}
+                                >
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Download PSD
+                                </Button>
+                                <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                                  <p>Arquivo Photoshop editável disponível</p>
+                                  <p>Formato: PSD</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Verificar arquivo PSD disponível */}
+                            {selectedProduct.arquivoPsd && (
+                              <div className="mb-3">
+                                <Button 
+                                  className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
+                                  onClick={() => handleDownloadPSD(selectedProduct)}
+                                >
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Download PSD
+                                </Button>
+                                <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                                  <p>Arquivo PSD disponível</p>
+                                  <p>Formato: PSD</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Verificar arquivo PDF disponível */}
+                            {selectedProduct.arquivoPdf && (
+                              <div className="mb-3">
+                                <Button 
+                                  className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
+                                  onClick={() => handleDownloadPDF(selectedProduct)}
+                                >
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Download PSD
+                                </Button>
+                                <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                                  <p>Arquivo PSD disponível</p>
+                                  <p>Formato: PSD</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Verificar arquivo PNG disponível */}
+                            {selectedProduct.arquivoPng && (
+                              <div className="mb-3">
+                                <Button 
+                                  variant="outline"
+                                  className="border-blue-600 text-blue-600 hover:bg-blue-50 w-full sm:w-auto"
+                                  onClick={() => handleDownloadPNG(selectedProduct)}
+                                >
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Download PNG
+                                </Button>
+                                <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                                  <p>Arquivo PNG disponível</p>
+                                  <p>Formato: PNG</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Mensagem quando não há downloads disponíveis */}
+                            {(!selectedProduct.arquivoPsd && !selectedProduct.arquivoPdf && !selectedProduct.arquivoPng) && (
+                              <div className="text-center py-4">
+                                <p className="text-muted-foreground text-sm">
+                                  Nenhum arquivo de download disponível para este produto.
+                                </p>
+                              </div>
+                            )}
                           </div>
 
 

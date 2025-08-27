@@ -10,6 +10,7 @@ datasource db {
 
 enum Role {
     ADMIN
+    DESIGNER
     CUSTOMER
 }
 
@@ -141,6 +142,11 @@ model Product {
     // Campos para imagens
     mainImage String? // URL ou base64 da imagem principal
     images    Json? // Array de imagens adicionais [{"url": "...", "label": "..."}]
+
+    // Campos para arquivos de download
+    arquivoPdf String? // URL do arquivo PDF
+    arquivoPng String? // URL do arquivo PNG
+    arquivoPsd String? // URL do arquivo PSD
 
     metadata  Json?
     createdAt DateTime @default(now())

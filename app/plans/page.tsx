@@ -35,17 +35,17 @@ export default function PlansPage() {
       icon: <Star className="h-6 w-6" />,
       description: "Para empresas em crescimento que precisam de mais recursos",
       monthlyPrice: 35,
-      yearlyPrice: 299,
+      yearlyPrice: 350,
       popular: true,
       features: [
         "Acesso completo ao catálogo",
         "5 downloads por dia",
         "Suporte prioritário",
         "Guias de marca avançados",
-        
-        
+        "Templates premium",
+        "Consultoria mensal (1h)",
+        "Acesso a webinars exclusivos",
       ],
-     
     },
     /*{{
       id: "enterprise",

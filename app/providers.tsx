@@ -17,8 +17,8 @@ export default function AuthProvider({
             {children}
             <ToastContainer
                 position="top-right"
-                autoClose={3000}
-                theme="light"
+                autoClose={5000}
+                theme="dark"
                 newestOnTop
                 closeOnClick
                 pauseOnFocusLoss

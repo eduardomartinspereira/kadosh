@@ -9,17 +9,16 @@ import { Menu, Search, User } from "lucide-react"
 import type { Session } from "next-auth"
 import { signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { useSearch } from "@/context/SearchContext"
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
+  const { searchTerm, setSearchTerm } = useSearch()
   const { data: session } = useSession()
 
   const router = useRouter();
 
-  const handleSearch = () => {
-    console.log("Searching:", searchTerm)
-  }
+
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
@@ -32,11 +31,25 @@ export function Header() {
         <div className="flex h-16 items-center justify-between gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">KD</span>
-            </div>
-            <span className="font-bold text-xl text-foreground">Kadosh</span>
+            <img 
+              src="/logoKadosh.svg" 
+              alt="Kadosh Logo" 
+              className="h-30 w-20"
+            />
           </Link>
+
+          {/* Barra de Pesquisa - Centralizada */}
+          <div className="flex-1 max-w-2xl mx-8 hidden md:block">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Buscar produtos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
 
           {/* Sessão / Ações */}
           {session ? (

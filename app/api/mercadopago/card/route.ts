@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mercadoPagoService } from '../../../../lib/mercadopago';
 import { sendPaymentConfirmationEmail } from '../../../../lib/mailer';
+import { prisma } from '../../../../lib/prisma';
 
 export const runtime = 'nodejs';
 
@@ -76,8 +77,113 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // === Enviar email se o pagamento foi aprovado ===
+    // === Salvar no banco se o pagamento foi aprovado ===
     if (mpData.status === 'approved' || mpData.status === 'authorized') {
+      try {
+        // Buscar usuário pelo email ou CPF
+        let user = await prisma.user.findUnique({
+          where: { email: payerEmail }
+        });
+
+        // Se não encontrar pelo email, tentar pelo CPF
+        if (!user && payerCpfCnpj !== 'CPF não informado') {
+          user = await prisma.user.findUnique({
+            where: { cpf: payerCpfCnpj }
+          });
+        }
+
+        // Se ainda não encontrar, tentar buscar pelo email sem espaços
+        if (!user) {
+          user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { email: payerEmail.trim() },
+                { email: payerEmail.toLowerCase() },
+                { email: payerEmail.toLowerCase().trim() }
+              ]
+            }
+          });
+        }
+
+        console.log('[CARD-API] 🔍 Buscando usuário:', { payerEmail, payerCpfCnpj });
+        console.log('[CARD-API] 🔍 Usuário encontrado:', user ? `Sim (ID: ${user.id})` : 'Não');
+
+        if (user) {
+          // Determinar o plano baseado no valor
+          let planSlug = 'monthly'; // padrão
+          if (amount >= 290) { // R$ 290,00 ou mais = plano anual
+            planSlug = 'yearly';
+          }
+
+          // Buscar o plano
+          const plan = await prisma.plan.findUnique({
+            where: { slug: planSlug }
+          });
+
+          if (plan) {
+            // Criar Subscription
+            const subscription = await prisma.subscription.create({
+              data: {
+                userId: user.id,
+                planId: plan.id,
+                status: 'ACTIVE',
+                paymentMethod: 'CARD',
+                provider: 'MERCADO_PAGO',
+                providerSubscriptionId: mpData.id?.toString(),
+                startAt: new Date(),
+                currentPeriodStart: new Date(),
+                currentPeriodEnd: new Date(Date.now() + (planSlug === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000), // 1 ano ou 1 mês
+              }
+            });
+
+            // Criar Order
+            const order = await prisma.order.create({
+              data: {
+                userId: user.id,
+                subscriptionId: subscription.id, // Vincular à subscription
+                type: 'SUBSCRIPTION_INITIAL',
+                status: 'PAID',
+                totalAmountCents: Math.round(amount * 100), // Converter para centavos
+                currency: 'BRL',
+                provider: 'MERCADO_PAGO',
+                providerOrderId: mpData.id?.toString(),
+              }
+            });
+
+            // Criar Invoice
+            const invoice = await prisma.invoice.create({
+              data: {
+                orderId: order.id,
+                provider: 'MERCADO_PAGO',
+                status: 'PAID',
+                providerInvoiceId: mpData.id?.toString(),
+              }
+            });
+
+            // Criar Payment
+            await prisma.payment.create({
+              data: {
+                invoiceId: invoice.id,
+                provider: 'MERCADO_PAGO',
+                method: 'CARD',
+                status: 'APPROVED',
+                amountCents: Math.round(amount * 100),
+                paidAt: new Date(),
+                providerPaymentId: mpData.id?.toString(),
+                providerRaw: mpData as any,
+              }
+            });
+
+            console.log('[CARD-API] 💾 Dados salvos no banco com sucesso');
+            console.log(`[CARD-API] 📅 Subscription criada: ${plan.name} (${planSlug})`);
+          }
+        }
+      } catch (dbError) {
+        console.error('[CARD-API] ❌ Erro ao salvar no banco:', dbError);
+        // Não falha o pagamento se o banco falhar
+      }
+
+      // === Enviar email de confirmação ===
       try {
         console.log('[CARD-API] 📧 Enviando email de confirmação para:', payerEmail);
         

@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { WhatsAppButton } from "@/components/whatsapp-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import CatalogSection from "@/components/catalog-section"
 
 export default function HomePage() {
   const serviceCategories = [
@@ -42,7 +43,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" className="text-lg px-8" asChild>
-              <Link href="/catalog">Ver Catálogo</Link>
+              <Link href="#catalog">Ver Catálogo</Link>
             </Button>
             <Button
               size="lg"
@@ -55,6 +56,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Catálogo de Produtos - Agora na página principal */}
+      <CatalogSection />
 
       {/* Services/Products Section */}
       <section className="py-20 bg-card">
@@ -87,7 +91,7 @@ export default function HomePage() {
 
           <div className="text-center">
             <Button size="lg" asChild>
-              <Link href="/catalog">
+              <Link href="#catalog">
                 Explorar Catálogo Completo
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>

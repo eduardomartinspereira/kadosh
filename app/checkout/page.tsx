@@ -48,11 +48,11 @@ const plans: Record<string, Plan> = {
         name: 'Profissional',
         description:
             'Para empresas em crescimento que precisam de mais recursos',
-        monthlyPrice: 197,
-        yearlyPrice: 1970,
+        monthlyPrice: 35,
+        yearlyPrice: 350,
         features: [
             'Acesso completo ao catálogo',
-            '20 downloads por mês',
+            '5 downloads por dia',
             'Suporte prioritário',
             'Templates premium',
             'Guias de marca avançados',
@@ -84,7 +84,7 @@ export default function CheckoutPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { data: session, status } = useSession();
-    const planId = (searchParams.get('plan') || 'basic').toLowerCase();
+    const planId = (searchParams.get('plan') || 'professional').toLowerCase();
     const billingCycle = (searchParams.get('cycle') || 'monthly').toLowerCase();
 
     useEffect(() => {
@@ -318,14 +318,14 @@ export default function CheckoutPage() {
                                     </div>
 
                                     {/* Renderiza o Checkout Transparente somente após aceitar os termos */}
-                                    {formData.acceptTerms ? (
-                                        mpPublicKey ? (
-                                            <TransparentForm
-                                                amount={price}
-                                                description={paymentDescription}
-                                                publicKey={mpPublicKey}
-                                            />
-                                        ) : (
+                                                                            {formData.acceptTerms ? (
+                                            mpPublicKey ? (
+                                                <TransparentForm
+                                                    amount={price}
+                                                    description={paymentDescription}
+                                                    publicKey={mpPublicKey}
+                                                />
+                                            ) : (
                                             <div className="text-sm text-red-500">
                                                 Defina{' '}
                                                 <code>

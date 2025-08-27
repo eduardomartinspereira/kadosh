@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,8 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff, Mail, Lock, User, Building } from "lucide-react"
 import Link from "next/link"
+import { showToast } from "@/lib/toast-config"
 
 export default function RegisterPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({
@@ -30,12 +33,12 @@ export default function RegisterPage() {
     e.preventDefault()
 
     if (formData.password !== formData.confirmPassword) {
-      alert("As senhas não coincidem")
+      showToast.error("As senhas não coincidem")
       return
     }
 
     if (!formData.acceptTerms) {
-      alert("Você deve aceitar os termos de uso")
+      showToast.warning("Você deve aceitar os termos de uso")
       return
     }
 
@@ -56,14 +59,17 @@ export default function RegisterPage() {
       const data = await response.json()
 
       if (response.ok) {
-        alert("Conta criada com sucesso! Faça login para continuar.")
-        window.location.href = '/auth/login'
+        showToast.accountCreated()
+        // Aguardar o toast aparecer antes de redirecionar
+        setTimeout(() => {
+          router.push('/auth/login')
+        }, 2000)
       } else {
-        alert(data.error || "Erro ao criar conta")
+        showToast.error(data.error || "Erro ao criar conta")
       }
     } catch (error) {
       console.error('Erro no registro:', error)
-      alert("Erro ao criar conta. Tente novamente.")
+      showToast.error("Erro ao criar conta. Tente novamente.")
     }
   }
 

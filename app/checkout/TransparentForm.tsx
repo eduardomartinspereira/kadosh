@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import PaymentSuccessModal from '@/components/payment-success-modal';
 import PaymentErrorModal from '@/components/payment-error-modal';
 import PaymentProcessingModal from '@/components/payment-processing-modal';
+import { showToast } from '@/lib/toast-config';
 
 type Props = {
     amount: number;
@@ -12,6 +14,7 @@ type Props = {
 };
 
 export default function TransparentForm({ amount, description, publicKey }: Props) {
+    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix'>('card');
     const [email, setEmail] = useState('');
@@ -38,6 +41,15 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
     // Estado para modal de processamento
     const [showProcessingModal, setShowProcessingModal] = useState(false);
 
+    // Função para redirecionar para o catálogo após pagamento bem-sucedido
+    const handlePaymentSuccess = () => {
+        setShowSuccessModal(false);
+        // Redireciona para o catálogo após um pequeno delay para melhor UX
+        setTimeout(() => {
+            router.push('/catalog');
+        }, 500);
+    };
+
     // Inicializa o SDK do Mercado Pago
     const initializeMercadoPago = () => {
         if (typeof window !== 'undefined' && (window as any).Mercadopago && !(window as any).mp) {
@@ -60,16 +72,65 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
     // Rejeitado por saldo: 4000 0000 0000 0002
     // Rejeitado por dados: 4000 0000 0000 0069
 
+    // Função simplificada para formatar CPF
     const formatCPF = (value: string) => {
+        // Remove tudo que não é número
         const numbers = value.replace(/\D/g, '');
-        if (numbers.length <= 3) return numbers;
-        if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
-        if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
-        return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
+        
+        // Limita a 11 dígitos
+        const numbersOnly = numbers.slice(0, 11);
+        
+        // Aplica a máscara automaticamente
+        if (numbersOnly.length === 0) return '';
+        if (numbersOnly.length <= 3) return numbersOnly;
+        if (numbersOnly.length <= 6) return `${numbersOnly.slice(0, 3)}.${numbersOnly.slice(3)}`;
+        if (numbersOnly.length <= 9) return `${numbersOnly.slice(0, 3)}.${numbersOnly.slice(3, 6)}.${numbersOnly.slice(6)}`;
+        return `${numbersOnly.slice(0, 3)}.${numbersOnly.slice(3, 6)}.${numbersOnly.slice(6, 9)}-${numbersOnly.slice(9, 11)}`;
+    };
+
+    // Função para validar CPF
+    const validateCPF = (cpf: string): boolean => {
+        const numbers = cpf.replace(/\D/g, '');
+        
+        // Verifica se tem 11 dígitos
+        if (numbers.length !== 11) return false;
+        
+        // Verifica se todos os dígitos são iguais
+        if (/^(\d)\1{10}$/.test(numbers)) return false;
+        
+        // Validação dos dígitos verificadores
+        let sum = 0;
+        for (let i = 0; i < 9; i++) {
+            sum += parseInt(numbers[i]) * (10 - i);
+        }
+        let remainder = (sum * 10) % 11;
+        if (remainder === 10 || remainder === 11) remainder = 0;
+        if (remainder !== parseInt(numbers[9])) return false;
+        
+        sum = 0;
+        for (let i = 0; i < 10; i++) {
+            sum += parseInt(numbers[i]) * (11 - i);
+        }
+        remainder = (sum * 10) % 11;
+        if (remainder === 10 || remainder === 11) remainder = 0;
+        if (remainder !== parseInt(numbers[10])) return false;
+        
+        return true;
     };
 
     const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const formatted = formatCPF(e.target.value);
+        const inputValue = e.target.value;
+        console.log('🔍 CPF input:', inputValue); // Debug
+        
+        // Se o usuário está apagando, permite
+        if (inputValue.length < cpf.length) {
+            setCpf(inputValue);
+            return;
+        }
+        
+        const formatted = formatCPF(inputValue);
+        console.log('🔍 CPF formatted:', formatted); // Debug
+        
         setCpf(formatted);
     };
 
@@ -217,7 +278,7 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
             console.error('Erro no pagamento:', error);
             // Fecha modal de processamento em caso de erro
             setShowProcessingModal(false);
-            alert(`Erro no pagamento: ${error.message}`);
+            showToast.error(`Erro no pagamento: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -264,7 +325,7 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
             console.error('Erro PIX:', error);
             // Fecha modal de processamento em caso de erro
             setShowProcessingModal(false);
-            alert(`Erro PIX: ${error.message}`);
+            showToast.error(`Erro PIX: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -306,14 +367,39 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
                 required
             />
 
-            <input
-                className="border rounded p-2 w-full bg-white text-gray-900"
-                placeholder="CPF (000.000.000-00)"
-                value={cpf}
-                onChange={handleCPFChange}
-                maxLength={14}
-                required
-            />
+            <div className="space-y-1">
+                <input
+                    className={`border rounded p-2 w-full bg-white text-gray-900 ${
+                        cpf && cpf.length === 14 
+                            ? validateCPF(cpf) 
+                                ? 'border-green-500 focus:border-green-600' 
+                                : 'border-red-500 focus:border-red-600'
+                            : 'border-gray-300 focus:border-blue-500'
+                    }`}
+                    placeholder="CPF (000.000.000-00)"
+                    value={cpf}
+                    onChange={handleCPFChange}
+                    onPaste={(e) => {
+                        e.preventDefault();
+                        const pastedText = e.clipboardData.getData('text');
+                        console.log('🔍 CPF pasted:', pastedText); // Debug
+                        const formatted = formatCPF(pastedText);
+                        console.log('🔍 CPF pasted formatted:', formatted); // Debug
+                        setCpf(formatted);
+                    }}
+                    maxLength={14}
+                    required
+                />
+                {cpf && cpf.length === 14 && (
+                    <div className={`text-xs ${
+                        validateCPF(cpf) 
+                            ? 'text-green-600 dark:text-green-400' 
+                            : 'text-red-600 dark:text-red-400'
+                    }`}>
+                        {validateCPF(cpf) ? '✅ CPF válido' : '❌ CPF inválido'}
+                    </div>
+                )}
+            </div>
 
             {/* Campos do cartão */}
             {paymentMethod === 'card' && (
@@ -400,7 +486,7 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(pixData.qr_code);
-                                        alert('Código PIX copiado!');
+                                        showToast.success('Código PIX copiado!');
                                     }}
                                     className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
                                 >
@@ -417,16 +503,32 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
                         <p><strong>ID:</strong> {pixData.id}</p>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setShowPixInfo(false);
-                            setPixData(null);
-                        }}
-                        className="w-full mt-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                    >
-                        Gerar Novo PIX
-                    </button>
+                    <div className="flex gap-2 mt-4">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowPixInfo(false);
+                                setPixData(null);
+                            }}
+                            className="flex-1 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                        >
+                            Gerar Novo PIX
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowPixInfo(false);
+                                setPixData(null);
+                                // Redireciona para o catálogo após PIX gerado
+                                setTimeout(() => {
+                                    router.push('/catalog');
+                                }, 500);
+                            }}
+                            className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                            Ir para Catálogo
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -440,7 +542,7 @@ export default function TransparentForm({ amount, description, publicKey }: Prop
             {/* Modal de sucesso */}
             <PaymentSuccessModal
                 isOpen={showSuccessModal}
-                onClose={() => setShowSuccessModal(false)}
+                onClose={handlePaymentSuccess}
                 amount={amount}
                 description={description}
                 status={paymentStatus}

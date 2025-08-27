@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Phone, Mail, Clock, Send, MessageCircle } from "lucide-react"
 import { WhatsAppButton } from "@/components/whatsapp-button"
+import { showToast } from "@/lib/toast-config"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -76,7 +77,7 @@ Mensagem enviada através do formulário de contato do site.`
     window.open(whatsappUrl, "_blank")
     
     // Mostrar mensagem de sucesso
-    alert("Formulário enviado! Redirecionando para o WhatsApp...")
+    showToast.success("Formulário enviado! Redirecionando para o WhatsApp...")
     
     // Limpar o formulário
     setFormData({

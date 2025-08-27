@@ -7,6 +7,8 @@ import type React from 'react';
 import './globals.css';
 import { getServerSession } from 'next-auth';
 import AuthProvider from './providers';
+import { authOptions } from '@/lib/auth';
+import { SearchProvider } from '@/context/SearchContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -31,7 +33,7 @@ export default async function RootLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     return (
         <html lang="pt-BR" className="dark">
             <head>
@@ -39,10 +41,12 @@ export default async function RootLayout({
             </head>
             <body>
                 <AuthProvider session={session}>
-                    <Header />
-                    <SecondaryNavigation />
-                    <main>{children}</main>
-                    <Footer />
+                    <SearchProvider>
+                        <Header />
+                        <SecondaryNavigation />
+                        <main>{children}</main>
+                        <Footer />
+                    </SearchProvider>
                 </AuthProvider>
             </body>
         </html>
