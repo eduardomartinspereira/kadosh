@@ -13,6 +13,7 @@ export default function TestEmailPage() {
   const [smtpLoading, setSmtpLoading] = useState(false);
   const [result, setResult] = useState<{ success?: boolean; message?: string; error?: string } | null>(null);
   const [smtpResult, setSmtpResult] = useState<{ success?: boolean; message?: string; error?: string } | null>(null);
+  const [rejectionResult, setRejectionResult] = useState<{ success?: boolean; message?: string; error?: string } | null>(null);
 
   const handleTestEmail = async () => {
     if (!email) {
@@ -63,6 +64,38 @@ export default function TestEmailPage() {
       setSmtpResult({ error: 'Erro de conexão' });
     } finally {
       setSmtpLoading(false);
+    }
+  };
+
+  const handleTestRejectionEmail = async () => {
+    if (!email) {
+      setRejectionResult({ error: 'Digite um email válido' });
+      return;
+    }
+
+    setLoading(true);
+    setRejectionResult(null);
+
+    try {
+      const response = await fetch('/api/test-rejection-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, name }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setRejectionResult({ success: true, message: data.message });
+      } else {
+        setRejectionResult({ error: data.error || 'Erro ao enviar email de recusa' });
+      }
+    } catch (error) {
+      setRejectionResult({ error: 'Erro de conexão' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -165,6 +198,33 @@ export default function TestEmailPage() {
                   <li>Para Gmail, use uma senha de app</li>
                   <li>Reinicie o servidor após configurar</li>
                 </ol>
+              </div>
+
+              {/* Teste de Email de Recusa */}
+              <div className="pt-4 border-t">
+                <h4 className="font-medium mb-2">Teste de Email de Recusa</h4>
+                <Button
+                  onClick={handleTestRejectionEmail}
+                  disabled={loading || !email}
+                  className="w-full"
+                  variant="destructive"
+                >
+                  {loading ? 'Enviando...' : 'Enviar Email de Recusa'}
+                </Button>
+
+                {rejectionResult && (
+                  <div className={`p-4 rounded-lg mt-3 ${
+                    rejectionResult.success 
+                      ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200' 
+                      : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200'
+                  }`}>
+                    {rejectionResult.success ? (
+                      <p>✅ {rejectionResult.message}</p>
+                    ) : (
+                      <p>❌ {rejectionResult.error}</p>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
