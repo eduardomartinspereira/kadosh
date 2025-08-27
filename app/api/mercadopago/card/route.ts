@@ -1,12 +1,8 @@
 // app/api/mercadopago/card/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { mercadoPagoService } from '../../../../lib/mercadopago';
-<<<<<<< HEAD
-import { sendPaymentConfirmationEmail } from '../../../../lib/mailer';
-import { prisma } from '../../../../lib/prisma';
-=======
 import { sendPaymentConfirmationEmail, sendPaymentRejectedEmail } from '../../../../lib/mailer';
->>>>>>> e2d97badfb0f32c95334114eb49e86c4153536b6
+import { prisma } from '../../../../lib/prisma';
 
 export const runtime = 'nodejs';
 

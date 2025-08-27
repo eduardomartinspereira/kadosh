@@ -118,6 +118,8 @@ model User {
     customerLinks CustomerProvider[]
     Account       Account[]
     Session       Session[]
+    downloadLogs  DownloadLog[]
+    accessLogs    AccessLog[]
 }
 
 model Category {
@@ -140,13 +142,12 @@ model Product {
     isPublic    Boolean       @default(false)
 
     // Campos para imagens
-    mainImage String? // URL ou base64 da imagem principal
+    mainImage String? @db.LongText // URL ou base64 da imagem principal
     images    Json? // Array de imagens adicionais [{"url": "...", "label": "..."}]
 
     // Campos para arquivos de download
-    arquivoPdf String? // URL do arquivo PDF
-    arquivoPng String? // URL do arquivo PNG
-    arquivoPsd String? // URL do arquivo PSD
+    arquivoPdf  String? @db.LongText // URL do arquivo PSD
+    arquivoPng  String? @db.LongText // URL do arquivo PNG
 
     metadata  Json?
     createdAt DateTime @default(now())
@@ -157,6 +158,7 @@ model Product {
     plans        PlanProduct[]
     entitlements UserEntitlement[]
     orderItems   OrderItem[]
+    downloadLogs DownloadLog[]
 }
 
 model ProductCategory {
@@ -196,6 +198,9 @@ model Plan {
     currency      String        @default("BRL")
     active        Boolean       @default(true)
     trialDays     Int           @default(0)
+    // Limites de download
+    maxDownloadsPerMonth Int?   // Máximo de downloads por mês
+    maxDownloadsPerDay   Int?   // Máximo de downloads por dia
     metadata      Json?
     createdAt     DateTime      @default(now())
     updatedAt     DateTime      @updatedAt
@@ -244,7 +249,73 @@ model Subscription {
     @@index([currentPeriodEnd])
 }
 
+model Order {
+    id               String        @id @default(cuid())
+    user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId           String
+    subscription     Subscription? @relation(fields: [subscriptionId], references: [id])
+    subscriptionId   String?
+    type             OrderType
+    status           OrderStatus   @default(PENDING)
+    totalAmountCents Int
+    currency         String        @default("BRL")
+    provider         Provider
+    providerOrderId  String?
+    createdAt        DateTime      @default(now())
+    updatedAt        DateTime      @updatedAt
 
+    items        OrderItem[]
+    invoices     Invoice[]
+    entitlements UserEntitlement[]
+
+    @@unique([provider, providerOrderId])
+    @@index([userId])
+    @@index([subscriptionId])
+    @@index([status])
+    @@index([provider])
+}
+
+model OrderItem {
+    id              String        @id @default(cuid())
+    order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    orderId         String
+    itemType        OrderItemType
+    planId          String?
+    productId       String?
+    quantity        Int           @default(1)
+    unitAmountCents Int
+    subtotalCents   Int
+
+    plan    Plan?    @relation(fields: [planId], references: [id])
+    product Product? @relation(fields: [productId], references: [id])
+
+    @@index([orderId])
+    @@index([planId])
+    @@index([productId])
+}
+
+model Invoice {
+    id                String        @id @default(cuid())
+    order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    orderId           String
+    provider          Provider
+    status            InvoiceStatus @default(OPEN)
+    dueDate           DateTime?
+    pdfUrl            String?
+    linhaDigitavel    String?
+    pixQrCode         String?
+    pixCopiaCola      String?
+    providerInvoiceId String?
+    createdAt         DateTime      @default(now())
+    updatedAt         DateTime      @updatedAt
+
+    payments Payment[]
+
+    @@unique([provider, providerInvoiceId])
+    @@index([orderId])
+    @@index([status])
+    @@index([provider])
+}
 
 model Payment {
     id                String        @id @default(cuid())
@@ -288,8 +359,76 @@ model UserEntitlement {
     @@index([productId])
 }
 
+// Novo modelo para rastrear downloads
+model DownloadLog {
+    id          String   @id @default(cuid())
+    user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId      String
+    product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+    productId   String
+    assetType   AssetType // Tipo do arquivo baixado (PSD, AI, SVG, etc.)
+    fileSize    BigInt?  // Tamanho do arquivo em bytes
+    ipAddress   String?  // IP do usuário (opcional, para auditoria)
+    userAgent   String?  // User agent do navegador (opcional, para auditoria)
+    createdAt   DateTime @default(now())
 
+    @@index([userId])
+    @@index([productId])
+    @@index([createdAt])
+    @@index([userId, createdAt]) // Para consultas de downloads por período
+}
 
+model WebhookEvent {
+    id               String        @id @default(cuid())
+    provider         Provider
+    eventType        String
+    providerEventId  String?
+    status           WebhookStatus @default(RECEIVED)
+    signatureValid   Boolean       @default(false)
+    payloadHash      String?
+    headers          Json?
+    payload          Json
+    relatedPayment   Payment?      @relation(fields: [relatedPaymentId], references: [id])
+    relatedPaymentId String?
+    processedAt      DateTime?
+    createdAt        DateTime      @default(now())
+
+    @@unique([provider, providerEventId])
+    @@index([provider])
+    @@index([status])
+}
+
+model CustomerProvider {
+    id                 String   @id @default(cuid())
+    user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId             String
+    provider           Provider
+    providerCustomerId String
+    createdAt          DateTime @default(now())
+
+    @@unique([provider, providerCustomerId])
+    @@index([userId, provider])
+}
+
+model Account {
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String?
+    access_token      String?
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String?
+    session_state     String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+    @@index([userId])
+}
 
 model Session {
     id           String   @id @default(cuid())
@@ -300,4 +439,35 @@ model Session {
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@index([userId])
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
+
+model AccessLog {
+  id          Int        @id @default(autoincrement())
+  userId      String?    // <-- precisa ser String para casar com User.id
+  ip          String
+  city        String?
+  browser     String      @default("Other")
+  deviceType  DeviceType
+  isIphone    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  deviceBrand String?
+  deviceModel String?
+
+  user        User?       @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "AccessLog_userId_idx")
+}
+
+
+enum DeviceType {
+  MOBILE
+  DESKTOP
 }
