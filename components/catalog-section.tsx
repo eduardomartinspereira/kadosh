@@ -416,9 +416,7 @@ export default function CatalogSection() {
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-semibold text-foreground">
-                  {downloadStatus.subscription?.plan?.name || 'Sem plano'}
-                </div>
+                
                 <div className="text-sm text-muted-foreground">
                   {downloadStatus.subscription?.status === 'ACTIVE' ? 'Assinante ativo' : 'Não assinante'}
                 </div>

@@ -5,11 +5,17 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
-import { Menu, Search, User } from "lucide-react"
+import { Menu, Search, User, ChevronDown } from "lucide-react"
 import type { Session } from "next-auth"
 import { signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useSearch } from "@/context/SearchContext"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -57,12 +63,37 @@ export function Header() {
               <span className="text-sm hidden sm:inline">
                 Olá, {session.user?.name ?? "usuário"}
               </span>
+              
               <Button
                 onClick={handleSignOut}
                 aria-label="Sair da conta"
               >
                 Sair
               </Button>
+              
+              {/* Dropdown de Páginas */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    Páginas
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/about">SOBRE</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/catalog">CATÁLOGO</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/plans">PLANOS</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/contact">CONTATO</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
             <div className="flex items-center gap-3">

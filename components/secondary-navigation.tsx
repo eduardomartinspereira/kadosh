@@ -36,12 +36,7 @@ export function SecondaryNavigation() {
     fetchCategories()
   }, [])
 
-  const navigationLinks = [
-    { name: "SOBRE", href: "/about" },
-    { name: "CATÁLOGO", href: "#catalog" },
-    { name: "PLANOS", href: "/plans" },
-    { name: "CONTATO", href: "/contact" },
-  ]
+  
 
   const handleCategoryClick = (categoryName: string) => {
     // Atualizar o termo de pesquisa para filtrar por categoria
@@ -57,25 +52,22 @@ export function SecondaryNavigation() {
   return (
     <nav className="hidden md:block w-full border-b border-border bg-card py-3">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between gap-x-4 pb-2">
-          {/* Navigation Links */}
-          {navigationLinks.map((item) => (
-            <Button key={item.name} variant="ghost" className="rounded-full px-4 py-2 text-sm flex-shrink-0">
-              <Link href={item.href}>{item.name}</Link>
-            </Button>
-          ))}
-
-          {/* Categorias Dinâmicas */}
-          {!loading && categories.map((category) => (
-            <Button 
-              key={category.id} 
-              variant="ghost" 
-              className="rounded-full px-4 py-2 text-sm flex-shrink-0 hover:bg-primary hover:text-primary-foreground transition-colors"
-              onClick={() => handleCategoryClick(category.name)}
-            >
-              {category.name.toUpperCase()}
-            </Button>
-          ))}
+        <div className="flex items-center gap-x-4 pb-2 overflow-x-auto">
+          {/* Categorias Dinâmicas - Com scroll horizontal */}
+          {!loading && (
+            <div className="flex items-center gap-x-3">
+              {categories.map((category) => (
+                <Button 
+                  key={category.id} 
+                  variant="ghost" 
+                  className="rounded-full px-3 py-2 text-sm whitespace-nowrap hover:bg-primary hover:text-primary-foreground transition-colors flex-shrink-0"
+                  onClick={() => handleCategoryClick(category.name)}
+                >
+                  {category.name.toUpperCase()}
+                </Button>
+              ))}
+            </div>
+          )}
 
           {/* Loading state */}
           {loading && (
