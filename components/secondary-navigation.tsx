@@ -52,7 +52,7 @@ export function SecondaryNavigation() {
   return (
     <nav className="hidden md:block w-full border-b border-border bg-card py-3">
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-x-4 pb-2 overflow-x-auto">
+        <div className="flex items-center gap-x-4 pb-2 overflow-x-auto scrollbar-hide">
           {/* Categorias Dinâmicas - Com scroll horizontal */}
           {!loading && (
             <div className="flex items-center gap-x-3">

@@ -20,6 +20,7 @@ import { WhatsAppButton } from "@/components/whatsapp-button"
 import { useSession } from "next-auth/react"
 import { showToast } from "@/lib/toast-config"
 import { useSearch } from "@/context/SearchContext"
+import { useRouter } from "next/navigation"
 
 interface Category {
   id: string
@@ -65,6 +66,7 @@ interface Product {
 export default function CatalogSection() {
   const { data: session, status } = useSession()
   const { searchTerm, updateSearchFromURL, clearSearch } = useSearch()
+  const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [allProducts, setAllProducts] = useState<Product[]>([])
@@ -193,6 +195,14 @@ export default function CatalogSection() {
       return
     }
 
+    // Verificar se tem assinatura ativa
+    if (!downloadStatus?.subscription?.status || 
+        (downloadStatus.subscription.status !== 'ACTIVE' && downloadStatus.subscription.status !== 'TRIALING')) {
+      showToast.error('Você precisa de uma assinatura ativa para fazer downloads')
+      router.push('/plans')
+      return
+    }
+
     if (!product.arquivoPdf) {
       showToast.downloadError('Arquivo PDF não disponível para este produto')
       return
@@ -232,6 +242,14 @@ export default function CatalogSection() {
   const handleDownloadPNG = async (product: Product) => {
     if (!(session?.user as any)?.id) {
       showToast.userNotLoggedIn()
+      return
+    }
+
+    // Verificar se tem assinatura ativa
+    if (!downloadStatus?.subscription?.status || 
+        (downloadStatus.subscription.status !== 'ACTIVE' && downloadStatus.subscription.status !== 'TRIALING')) {
+      showToast.error('Você precisa de uma assinatura ativa para fazer downloads')
+      router.push('/plans')
       return
     }
 
@@ -522,48 +540,69 @@ export default function CatalogSection() {
                       <div className="pt-4">
                         <h4 className="font-semibold mb-3 text-foreground">Downloads Disponíveis</h4>
                         
-                        {/* Verificar arquivo PDF disponível */}
-                        {selectedProduct.arquivoPdf && (
-                          <div className="mb-3">
-                            <Button 
-                              className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
-                              onClick={() => handleDownloadPDF(selectedProduct)}
-                            >
-                              <Download className="mr-2 h-4 w-4" />
-                              Download PDF
-                            </Button>
-                            <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                              <p>Arquivo PDF disponível</p>
-                              <p>Formato: PDF</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Verificar arquivo PNG disponível */}
-                        {selectedProduct.arquivoPng && (
-                          <div className="mb-3">
-                            <Button 
-                              variant="outline"
-                              className="border-blue-600 text-blue-600 hover:bg-blue-50 w-full sm:w-auto"
-                              onClick={() => handleDownloadPNG(selectedProduct)}
-                            >
-                              <Download className="mr-2 h-4 w-4" />
-                              Download PNG
-                            </Button>
-                            <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                              <p>Arquivo PNG disponível</p>
-                              <p>Formato: PNG</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Mensagem quando não há downloads disponíveis */}
-                        {(!selectedProduct.arquivoPdf && !selectedProduct.arquivoPng) && (
-                          <div className="text-center py-4">
-                            <p className="text-muted-foreground text-sm">
-                              Nenhum arquivo de download disponível para este produto.
+                        {/* Verificar se tem assinatura ativa */}
+                        {(!downloadStatus?.subscription?.status || 
+                          (downloadStatus.subscription.status !== 'ACTIVE' && downloadStatus.subscription.status !== 'TRIALING')) ? (
+                          <div className="text-center py-6 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <h5 className="text-lg font-semibold text-foreground mb-2">
+                              Assinatura Necessária
+                            </h5>
+                            <p className="text-muted-foreground mb-4">
+                              Você precisa de uma assinatura ativa para fazer downloads.
                             </p>
+                            <Button 
+                              onClick={() => router.push('/plans')}
+                              className="bg-primary hover:bg-primary/90 text-white"
+                            >
+                              Ver Planos
+                            </Button>
                           </div>
+                        ) : (
+                          <>
+                            {/* Verificar arquivo PDF disponível */}
+                            {selectedProduct.arquivoPdf && (
+                              <div className="mb-3">
+                                <Button 
+                                  className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
+                                  onClick={() => handleDownloadPDF(selectedProduct)}
+                                >
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Link do Canva
+                                </Button>
+                                <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                                  <p>Link do Canva disponível</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Verificar arquivo PNG disponível */}
+                            {selectedProduct.arquivoPng && (
+                              <div className="mb-3">
+                                <Button 
+                                  variant="outline"
+                                  className="border-blue-600 text-blue-600 hover:bg-blue-50 w-full sm:w-auto"
+                                  onClick={() => handleDownloadPNG(selectedProduct)}
+                                >
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Download PNG
+                                </Button>
+                                <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                                  <p>Arquivo PNG disponível</p>
+                                  <p>Formato: PNG</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Mensagem quando não há downloads disponíveis */}
+                            {(!selectedProduct.arquivoPdf && !selectedProduct.arquivoPng) && (
+                              <div className="text-center py-4">
+                                <p className="text-muted-foreground text-sm">
+                                  Nenhum arquivo de download disponível para este produto.
+                                </p>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
