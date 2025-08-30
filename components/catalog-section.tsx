@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
-
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Filter, Share2, Eye, Image as ImageIcon, Download, AlertCircle } from "lucide-react"
+import { Filter, Share2, Eye, Image as ImageIcon, Download, AlertCircle, ExternalLink, Search } from "lucide-react"
 import Image from "next/image"
 import { WhatsAppButton } from "@/components/whatsapp-button"
 import { useSession } from "next-auth/react"
@@ -56,16 +56,19 @@ interface Product {
   }>
   arquivoPdf?: string
   arquivoPng?: string
+  imageTypes?: string[]
   createdAt: string
   categories: Array<{
     category: Category
   }>
   assets: ProductAsset[]
+  img2?: string
+  linkCanvas?: string
 }
 
 export default function CatalogSection() {
   const { data: session, status } = useSession()
-  const { searchTerm, updateSearchFromURL, clearSearch } = useSearch()
+  const { searchTerm, setSearchTerm, updateSearchFromURL, clearSearch } = useSearch()
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -183,6 +186,33 @@ export default function CatalogSection() {
     return "/placeholder.svg"
   }
 
+  // Função para obter imagem do modal (img2)
+  const getModalImage = (product: Product) => {
+    if (product.img2) {
+      return product.img2
+    }
+    
+    if (product.mainImage) {
+      return product.mainImage
+    }
+    
+    if (product.images && product.images.length > 0) {
+      return product.images[0].url
+    }
+    
+    // Fallback para imagem padrão
+    return "/placeholder.svg"
+  }
+
+  // Função para abrir link do Canva
+  const handleOpenCanvaLink = (product: Product) => {
+    if (product.linkCanvas) {
+      window.open(product.linkCanvas, '_blank')
+    } else {
+      showToast.error('Link do Canva não disponível para este produto')
+    }
+  }
+
   // Função para obter nomes das categorias
   const getCategoryNames = (product: Product) => {
     return product.categories.map(cat => cat.category.name).join(', ')
@@ -288,13 +318,47 @@ export default function CatalogSection() {
     }
   }
 
+  const handleDownloadPSD = async (product: Product) => {
+    if (!(session?.user as any)?.id) {
+      showToast.userNotLoggedIn()
+      return
+    }
+
+    // Verificar se tem assinatura ativa
+    if (!downloadStatus?.subscription?.status || 
+        (downloadStatus.subscription.status !== 'ACTIVE' && downloadStatus.subscription.status !== 'TRIALING')) {
+      showToast.error('Você precisa de uma assinatura ativa para fazer downloads')
+      router.push('/plans')
+      return
+    }
+
+    if (!product.arquivoPdf) {
+      showToast.downloadError('Arquivo PSD não disponível para este produto')
+      return
+    }
+
+    try {
+      // Download direto do arquivo PDF (usado como PSD)
+      const link = document.createElement('a')
+      link.href = product.arquivoPdf
+      link.download = `${product.name}.psd`
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      showToast.downloadStarted(product.name, 'PSD')
+    } catch (error) {
+      console.error('Erro no download:', error)
+      showToast.genericError('Erro ao iniciar download')
+    }
+  }
+
   // Componente para imagem do produto com fallback
   const ProductImage = ({ product, className }: { product: Product; className?: string }) => (
-    <Image
+    <img
       src={getProductImage(product)}
       alt={product.name}
-      width={400}
-      height={300}
       className={className}
       onError={(e) => {
         const target = e.target as HTMLImageElement
@@ -328,6 +392,19 @@ export default function CatalogSection() {
             <p className="text-xl text-muted-foreground mb-8">
               Explore nossa coleção de artes e materiais marcantes para nossos clientes.
             </p>
+            
+            {/* Barra de Pesquisa Centralizada */}
+            <div className="max-w-2xl mx-auto">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Buscar produtos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-background/80 border-border/50 focus:border-primary"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -448,9 +525,9 @@ export default function CatalogSection() {
           {filteredProducts.map((product) => (
             <div key={product.id} className="group cursor-pointer" onClick={() => setSelectedProduct(product)}>
               <div className="relative rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 bg-card border border-border">
-                {/* Imagem do Produto - Mantendo proporções originais */}
-                <div className="w-full flex justify-center">
-                  <ProductImage product={product} className="w-full h-auto max-h-64 object-contain" />
+                {/* Imagem do Produto - Adaptando ao tamanho da imagem */}
+                <div className="w-full">
+                  <ProductImage product={product} className="w-full h-auto object-contain" />
                 </div>
                 
                 {/* Badge da Categoria */}
@@ -485,7 +562,7 @@ export default function CatalogSection() {
 
         {/* Product Detail Modal */}
         <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-7xl h-[70vh] overflow-y-auto scrollbar-hide">
             {selectedProduct && (
               <>
                 <DialogHeader>
@@ -502,9 +579,10 @@ export default function CatalogSection() {
                     {/* Imagem Principal */}
                     <div>
                       <div className="relative w-full h-[400px] rounded-lg overflow-hidden">
-                        <ProductImage
-                          product={selectedProduct}
-                          className="w-full rounded-lg"
+                        <img
+                          src={getModalImage(selectedProduct)}
+                          alt={selectedProduct.name}
+                          className="w-full h-full object-contain rounded-lg"
                         />
                       </div>
                     </div>
@@ -527,14 +605,48 @@ export default function CatalogSection() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <h4 className="font-semibold mr-2 text-foreground">Avaliação:</h4>
-                        <div className="flex gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <div key={i} className="w-4 h-4 bg-yellow-400 rounded-sm"></div>
-                          ))}
+                      {/* Tipos de Imagem */}
+                      {selectedProduct.imageTypes && selectedProduct.imageTypes.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold mb-2 text-foreground">Tipos de Arquivo</h4>
+                          <div className="flex items-center gap-3">
+                            {selectedProduct.imageTypes.map((type) => {
+                              let iconSrc = ''
+                              let altText = ''
+                              
+                              switch (type) {
+                                case 'PSD':
+                                  iconSrc = '/photoshop.png'
+                                  altText = 'Photoshop'
+                                  break
+                                case 'PNG':
+                                  iconSrc = '/png.png'
+                                  altText = 'PNG'
+                                  break
+                                case 'CANVA':
+                                  iconSrc = '/canva.png'
+                                  altText = 'Canva'
+                                  break
+                                default:
+                                  return null
+                              }
+                              
+                              return (
+                                <div key={type} className="flex items-center gap-2">
+                                  <img 
+                                    src={iconSrc} 
+                                    alt={altText} 
+                                    className="w-6 h-6 object-contain"
+                                  />
+                                  <span className="text-sm text-muted-foreground">{type}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      
 
                       {/* Botões de Download */}
                       <div className="pt-4">
@@ -560,42 +672,34 @@ export default function CatalogSection() {
                           </div>
                         ) : (
                           <>
-                            {/* Verificar arquivo PDF disponível */}
-                            {selectedProduct.arquivoPdf && (
-                              <div className="mb-3">
-                                <Button 
-                                  className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
-                                  onClick={() => handleDownloadPDF(selectedProduct)}
-                                >
-                                  <Download className="mr-2 h-4 w-4" />
-                                  Link do Canva
-                                </Button>
-                                <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                                  <p>Link do Canva disponível</p>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Verificar arquivo PNG disponível */}
-                            {selectedProduct.arquivoPng && (
-                              <div className="mb-3">
+                            {/* Botões de Download lado a lado */}
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              {/* Verificar arquivo PSD disponível (usando arquivoPdf) */}
+                              {selectedProduct.arquivoPdf && (
                                 <Button 
                                   variant="outline"
-                                  className="border-blue-600 text-blue-600 hover:bg-blue-50 w-full sm:w-auto"
-                                  onClick={() => handleDownloadPNG(selectedProduct)}
+                                  className="bg-blue-600 text-white hover:bg-blue-700 sm:w-80 h-12"
+                                  onClick={() => handleDownloadPSD(selectedProduct)}
                                 >
                                   <Download className="mr-2 h-4 w-4" />
-                                  Download PNG
+                                  Download 
                                 </Button>
-                                <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                                  <p>Arquivo PNG disponível</p>
-                                  <p>Formato: PNG</p>
-                                </div>
-                              </div>
-                            )}
+                              )}
+
+                              {/* Link do Canva */}
+                              {selectedProduct.linkCanvas && (
+                                <Button 
+                                  className="bg-purple-600 hover:bg-purple-700 text-white sm:w-80 h-12"
+                                  onClick={() => handleOpenCanvaLink(selectedProduct)}
+                                >
+                                  <ExternalLink className="mr-2 h-4 w-4" />
+                                  Link do Canva
+                                </Button>
+                              )}
+                            </div>
 
                             {/* Mensagem quando não há downloads disponíveis */}
-                            {(!selectedProduct.arquivoPdf && !selectedProduct.arquivoPng) && (
+                            {(!selectedProduct.arquivoPdf && !selectedProduct.arquivoPng && !selectedProduct.linkCanvas) && (
                               <div className="text-center py-4">
                                 <p className="text-muted-foreground text-sm">
                                   Nenhum arquivo de download disponível para este produto.

@@ -5,17 +5,12 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
-import { Menu, Search, User, ChevronDown } from "lucide-react"
+import { Menu, Search, User, ChevronDown, Star } from "lucide-react"
 import type { Session } from "next-auth"
 import { signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useSearch } from "@/context/SearchContext"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -70,38 +65,30 @@ export function Header() {
               >
                 Sair
               </Button>
-              
-              {/* Dropdown de Páginas */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    Páginas
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem asChild>
-                    <Link href="/about">SOBRE</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/catalog">CATÁLOGO</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/plans">PLANOS</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/contact">CONTATO</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+
+              {/* Botão Seja Premium */}
+              <Button asChild className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white">
+                <Link href="/plans">
+                  <Star className="h-4 w-4 mr-2" />
+                  Seja Premium
+                </Link>
+              </Button>
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <span className="text-sm">Você não está logado</span>
+              <span className="text-sm"></span>
               <Button asChild size="sm">
                 <Link href="/auth/login">
                   <User className="h-4 w-4 mr-2" />
                   Entrar
+                </Link>
+              </Button>
+
+              {/* Botão Seja Premium */}
+              <Button asChild className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white">
+                <Link href="/plans">
+                  <Star className="h-4 w-4 mr-2" />
+                  Seja Premium
                 </Link>
               </Button>
             </div>

@@ -32,30 +32,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section - Reverted to Version 1 style with dark theme */}
-      <section className="relative py-20 lg:py-32 flex flex-col items-center justify-center text-center bg-background text-foreground">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <h1 className="text-4xl lg:text-6xl font-extrabold leading-tight mb-6">
-            Transforme sua visão em realidade com <span className="text-primary">Kadosh</span>
-          </h1>
-          <p className="text-xl lg:text-2xl mb-10 text-muted-foreground">
-            Sua biblioteca digital completa de artes e materiais gráficos cristãos.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="text-lg px-8" asChild>
-              <Link href="#catalog">Ver Catálogo</Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="text-lg px-8 border-primary text-primary hover:bg-primary hover:text-primary-foreground bg-transparent"
-              asChild
-            >
-              <Link href="/contact">Falar Conosco</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      
 
       {/* Catálogo de Produtos - Agora na página principal */}
       <CatalogSection />

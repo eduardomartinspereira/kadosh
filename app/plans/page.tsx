@@ -34,17 +34,18 @@ export default function PlansPage() {
       name: "Profissional",
       icon: <Star className="h-6 w-6" />,
       description: "Para empresas em crescimento que precisam de mais recursos",
-      monthlyPrice: 35,
-      yearlyPrice: 350,
+      monthlyPrice: 34.90,
+      yearlyPrice: 289.90,
       popular: true,
       features: [
-        "Acesso completo ao catálogo",
-        "5 downloads por dia",
-        "Suporte prioritário",
-        "Guias de marca avançados",
-        "Templates premium",
-        "Consultoria mensal (1h)",
-        "Acesso a webinars exclusivos",
+        "Até 5 downloads por dia",
+        "Qualquer arquivo do site",
+        "Downloads simultâneos",
+        "Velocidade máxima",
+        "Site sem anúncios",
+        "Suporte via Whatsapp",
+        "Atualizações diárias",
+        "Liberação imediata",
       ],
     },
     /*{{
@@ -114,7 +115,8 @@ export default function PlansPage() {
   const getSavings = (plan: any) => {
     const monthlyCost = plan.monthlyPrice * 12
     const yearlyCost = plan.yearlyPrice
-    return monthlyCost - yearlyCost
+    const savings = monthlyCost - yearlyCost
+    return savings.toFixed(2)
   }
 
   return (

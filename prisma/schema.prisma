@@ -143,11 +143,16 @@ model Product {
 
     // Campos para imagens
     mainImage String? @db.LongText // URL ou base64 da imagem principal
-    images    Json? // Array de imagens adicionais [{"url": "...", "label": "..."}]
+    img        String? @db.LongText // URL da primeira imagem
+    img2       String? @db.LongText // URL da segunda imagem
+    images     Json? // Array de imagens adicionais [{"url": "...", "label": "..."}]
 
     // Campos para arquivos de download
-    arquivoPdf  String? @db.LongText // URL do arquivo PSD
+    arquivoPdf  String? @db.LongText // URL do arquivo PDF
     arquivoPng  String? @db.LongText // URL do arquivo PNG
+
+    // Campo para link do Canvas
+    linkCanvas String? @db.LongText // Link do Canvas
 
     metadata  Json?
     createdAt DateTime @default(now())

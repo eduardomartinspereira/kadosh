@@ -48,8 +48,8 @@ const plans: Record<string, Plan> = {
         name: 'Profissional',
         description:
             'Para empresas em crescimento que precisam de mais recursos',
-        monthlyPrice: 35,
-        yearlyPrice: 350,
+        monthlyPrice: 34.90,
+        yearlyPrice: 289.90,
         features: [
             'Acesso completo ao catálogo',
             '5 downloads por dia',
