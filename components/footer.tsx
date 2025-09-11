@@ -1,11 +1,11 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import { Instagram, Mail, MapPin, Phone } from "lucide-react"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Instagram, Mail, MapPin, Phone } from "lucide-react";
 
 export function Footer() {
-  const currentYear = new Date().getFullYear()
+  const currentYear = new Date().getFullYear();
 
   const footerLinks = {
     company: [
@@ -26,7 +26,7 @@ export function Footer() {
       { name: "Política de Privacidade", href: "/privacy" },
       { name: "FAQ", href: "/faq" },
     ],
-  }
+  };
 
   return (
     <footer className="bg-card text-foreground">
@@ -35,16 +35,16 @@ export function Footer() {
           {/* Company Info */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center space-x-2 mb-6">
-              <img 
-                src="/logoKadosh.svg" 
-                alt="Kadosh Logo" 
-                className="h-8 w-auto"
+              <img
+                src="/logoKadosh.svg"
+                alt="Kadosh Logo"
+                className="h-10 w-auto"
               />
               <span className="font-bold text-xl">Kadosh</span>
             </Link>
             <p className="text-muted-foreground mb-6 leading-relaxed">
-              Criamos experiências visuais que transformam marcas e negócios. Sua presença online perfeita com design de
-              qualidade.
+              Criamos experiências visuais que transformam marcas e negócios.
+              Sua presença online perfeita com design de qualidade.
             </p>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-muted-foreground">
@@ -69,7 +69,10 @@ export function Footer() {
               <ul className="space-y-3">
                 {footerLinks.company.map((link) => (
                   <li key={link.name}>
-                    <Link href={link.href} className="text-muted-foreground hover:text-primary transition-colors">
+                    <Link
+                      href={link.href}
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
                       {link.name}
                     </Link>
                   </li>
@@ -82,7 +85,10 @@ export function Footer() {
               <ul className="space-y-3">
                 {footerLinks.services.map((link) => (
                   <li key={link.name}>
-                    <Link href={link.href} className="text-muted-foreground hover:text-primary transition-colors">
+                    <Link
+                      href={link.href}
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
                       {link.name}
                     </Link>
                   </li>
@@ -95,7 +101,10 @@ export function Footer() {
               <ul className="space-y-3">
                 {footerLinks.support.map((link) => (
                   <li key={link.name}>
-                    <Link href={link.href} className="text-muted-foreground hover:text-primary transition-colors">
+                    <Link
+                      href={link.href}
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
                       {link.name}
                     </Link>
                   </li>
@@ -106,14 +115,21 @@ export function Footer() {
 
           {/* Newsletter */}
           <div className="lg:col-span-1">
-            
-
             {/* Social Media */}
             <div className="mt-6">
               <h4 className="font-medium mb-3">Siga-nos</h4>
               <div className="flex gap-3">
-                <Button variant="outline" size="icon" className="border-border hover:bg-muted bg-transparent" asChild>
-                  <a href="https://www.instagram.com/hd_designer.ofc/" target="_blank" rel="noopener noreferrer">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="border-border hover:bg-muted bg-transparent"
+                  asChild
+                >
+                  <a
+                    href="https://www.instagram.com/hd_designer.ofc/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <Instagram className="h-4 w-4" />
                   </a>
                 </Button>
@@ -125,20 +141,31 @@ export function Footer() {
         <Separator className="my-8 bg-border" />
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-muted-foreground text-sm">© {currentYear} Kadosh. Todos os direitos reservados.</p>
+          <p className="text-muted-foreground text-sm">
+            © {currentYear} Kadosh. Todos os direitos reservados.
+          </p>
           <div className="flex gap-6 text-sm">
-            <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link
+              href="/terms"
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
               Termos de Uso
             </Link>
-            <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link
+              href="/privacy"
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
               Privacidade
             </Link>
-            <Link href="/cookies" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link
+              href="/cookies"
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
               Cookies
             </Link>
           </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }
