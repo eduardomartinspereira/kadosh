@@ -61,7 +61,7 @@ export function Header() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Buscar produtos..."
+                placeholder="Buscar artes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -98,16 +98,20 @@ export function Header() {
                 Sair
               </Button>
 
-              {/* Botão Seja Premium */}
-              <Button
-                asChild
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-              >
-                <Link href="/plans">
-                  <Star className="h-4 w-4 mr-2" />
-                  Seja Premium
-                </Link>
-              </Button>
+              {/* Botão Seja Premium - só aparece se não tiver assinatura ativa */}
+              {!downloadStatus?.subscription?.status ||
+              (downloadStatus.subscription.status !== "ACTIVE" &&
+                downloadStatus.subscription.status !== "TRIALING") ? (
+                <Button
+                  asChild
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                >
+                  <Link href="/plans">
+                    <Star className="h-4 w-4 mr-2" />
+                    Seja Premium
+                  </Link>
+                </Button>
+              ) : null}
             </div>
           ) : (
             <div className="flex items-center gap-3">

@@ -81,7 +81,15 @@ interface Product {
   linkCanvas?: string;
 }
 
-export default function CatalogSection() {
+interface CatalogSectionProps {
+  selectedFileTypes?: string[];
+  selectedCategories?: string[];
+}
+
+export default function CatalogSection({
+  selectedFileTypes = [],
+  selectedCategories = [],
+}: CatalogSectionProps) {
   const { data: session, status } = useSession();
   const { searchTerm, setSearchTerm, updateSearchFromURL, clearSearch } =
     useSearch();
@@ -160,11 +168,11 @@ export default function CatalogSection() {
     }
   }, [session]);
 
-  // Filtrar produtos baseado na pesquisa e categoria
+  // Filtrar produtos baseado na pesquisa, categoria e filtros da sidebar
   const filteredProducts = useMemo(() => {
     let filtered = allProducts;
 
-    // Filtrar por categoria
+    // Filtrar por categoria (dropdown)
     if (selectedCategory !== "all") {
       filtered = filtered.filter((product) =>
         product.categories.some((cat) => cat.category.slug === selectedCategory)
@@ -186,8 +194,36 @@ export default function CatalogSection() {
       );
     }
 
+    // Filtro por tipo de arquivo (sidebar)
+    if (selectedFileTypes.length > 0) {
+      filtered = filtered.filter((product) => {
+        // Verificar se o produto tem imageTypes e se contém algum dos tipos selecionados
+        if (product.imageTypes && Array.isArray(product.imageTypes)) {
+          return selectedFileTypes.some((fileType) =>
+            product.imageTypes!.includes(fileType.toUpperCase())
+          );
+        }
+        return false;
+      });
+    }
+
+    // Filtro por categorias (sidebar)
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter((product) =>
+        product.categories.some((cat) =>
+          selectedCategories.includes(cat.category.id)
+        )
+      );
+    }
+
     return filtered;
-  }, [allProducts, selectedCategory, searchTerm]);
+  }, [
+    allProducts,
+    selectedCategory,
+    searchTerm,
+    selectedFileTypes,
+    selectedCategories,
+  ]);
 
   // Função para obter imagem do produto
   const getProductImage = (product: Product) => {
@@ -222,7 +258,7 @@ export default function CatalogSection() {
   };
 
   // Função para abrir link do Canva
-  const handleOpenCanvaLink = (product: Product) => {
+  const handleOpenCanvaLink = async (product: Product) => {
     if (!(session?.user as any)?.id) {
       showToast.userNotLoggedIn();
       return;
@@ -241,10 +277,33 @@ export default function CatalogSection() {
       return;
     }
 
-    if (product.linkCanvas) {
-      window.open(product.linkCanvas, "_blank");
-    } else {
+    if (!product.linkCanvas) {
       showToast.error("Link do Canva não disponível para este produto");
+      return;
+    }
+
+    try {
+      // Chamar API para contabilizar o download
+      const response = await fetch(`/api/download/canva/${product.id}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        // Atualizar status dos downloads
+        const statusResponse = await fetch("/api/downloads/status");
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          setDownloadStatus(statusData.data);
+        }
+
+        // Abrir link do Canva
+        window.open(product.linkCanvas, "_blank");
+        showToast.downloadStarted(product.name, "Canva");
+      } else {
+        showToast.downloadError(data.error || "Erro ao acessar Canva");
+      }
+    } catch (error) {
+      console.error("Erro ao acessar Canva:", error);
+      showToast.genericError("Erro ao acessar Canva");
     }
   };
 
@@ -557,6 +616,12 @@ export default function CatalogSection() {
 
           <div className="mt-4 text-sm text-muted-foreground">
             {filteredProducts.length} produtos encontrados
+            {(selectedFileTypes.length > 0 ||
+              selectedCategories.length > 0) && (
+              <span className="ml-2 text-blue-600 font-medium">
+                (filtros ativos)
+              </span>
+            )}
           </div>
         </div>
 

@@ -1,37 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../lib/prisma'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "../../../lib/prisma";
 
 // GET - Listar produtos com filtros
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search') || ''
-    const category = searchParams.get('category') || ''
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '12')
-    const offset = (page - 1) * limit
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search") || "";
+    const category = searchParams.get("category") || "";
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "12");
+    const offset = (page - 1) * limit;
 
     // Construir filtros
     const where: any = {
       isPublic: true,
-      status: 'ACTIVE'
-    }
+      status: "ACTIVE",
+    };
 
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
-      ]
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+      ];
     }
 
     if (category) {
       where.categories = {
         some: {
           category: {
-            slug: category
-          }
-        }
-      }
+            slug: category,
+          },
+        },
+      };
     }
 
     // Buscar produtos com categorias
@@ -40,19 +40,19 @@ export async function GET(request: NextRequest) {
       include: {
         categories: {
           include: {
-            category: true
-          }
-        }
+            category: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: "desc",
       },
       skip: offset,
-      take: limit
-    })
+      take: limit,
+    });
 
     // Contar total de produtos
-    const total = await prisma.product.count({ where })
+    const total = await prisma.product.count({ where });
 
     return NextResponse.json({
       products,
@@ -60,47 +60,51 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
-      }
-    })
-
+        pages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
-    console.error('Erro ao buscar produtos:', error)
+    console.error("Erro ao buscar produtos:", error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: "Erro interno do servidor" },
       { status: 500 }
-    )
+    );
   }
 }
 
 // POST - Criar novo produto
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { name, description, categoryIds, mainImage, images } = body
+    const body = await request.json();
+    const { name, description, categoryIds, mainImage, images } = body;
 
-    if (!name || !categoryIds || !Array.isArray(categoryIds) || categoryIds.length === 0) {
+    if (
+      !name ||
+      !categoryIds ||
+      !Array.isArray(categoryIds) ||
+      categoryIds.length === 0
+    ) {
       return NextResponse.json(
-        { error: 'Nome e pelo menos uma categoria são obrigatórios' },
+        { error: "Nome e pelo menos uma categoria são obrigatórios" },
         { status: 400 }
-      )
+      );
     }
 
     // Criar slug único
     const slug = name
       .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .trim();
 
     // Preparar dados das imagens
     const imageData = {
       mainImage: mainImage || null,
-      images: images || null
-    }
+      images: images || null,
+    };
 
     // Criar produto
     const product = await prisma.product.create({
@@ -108,32 +112,31 @@ export async function POST(request: NextRequest) {
         name,
         slug,
         description,
-        status: 'ACTIVE',
+        status: "ACTIVE",
         isPublic: true,
         mainImage: imageData.mainImage,
         images: imageData.images,
         categories: {
           create: categoryIds.map((categoryId: string) => ({
-            categoryId
-          }))
-        }
+            categoryId,
+          })),
+        },
       },
       include: {
         categories: {
           include: {
-            category: true
-          }
-        }
-      }
-    })
+            category: true,
+          },
+        },
+      },
+    });
 
-    return NextResponse.json(product, { status: 201 })
-
+    return NextResponse.json(product, { status: 201 });
   } catch (error) {
-    console.error('Erro ao criar produto:', error)
+    console.error("Erro ao criar produto:", error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: "Erro interno do servidor" },
       { status: 500 }
-    )
+    );
   }
-} 
+}

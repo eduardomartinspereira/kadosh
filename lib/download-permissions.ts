@@ -1,32 +1,34 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 export interface DownloadPermission {
-  canDownload: boolean
-  reason?: string
-  dailyDownloads: number
-  monthlyDownloads: number
-  dailyLimit: number
-  monthlyLimit: number
-  remainingDaily: number
-  remainingMonthly: number
+  canDownload: boolean;
+  reason?: string;
+  dailyDownloads: number;
+  monthlyDownloads: number;
+  dailyLimit: number;
+  monthlyLimit: number;
+  remainingDaily: number;
+  remainingMonthly: number;
 }
 
 /**
  * Verifica se um usuário pode fazer download baseado em sua assinatura ativa
  * Regra simples: usuários com assinatura ativa podem fazer até 5 downloads por dia
  */
-export async function checkDownloadPermission(userId: string): Promise<DownloadPermission> {
+export async function checkDownloadPermission(
+  userId: string
+): Promise<DownloadPermission> {
   try {
     // Buscar assinatura ativa do usuário
-    console.log('🔍 Debug - Verificando assinatura para usuário:', userId)
-    
+    console.log("🔍 Debug - Verificando assinatura para usuário:", userId);
+
     const activeSubscription = await prisma.subscription.findFirst({
       where: {
         userId,
         status: {
-          in: ['ACTIVE', 'TRIALING'] // Incluir TRIALING também
+          in: ["ACTIVE", "TRIALING"], // Incluir TRIALING também
         },
         currentPeriodEnd: {
           gte: new Date(), // Assinatura ainda válida
@@ -35,32 +37,32 @@ export async function checkDownloadPermission(userId: string): Promise<DownloadP
       include: {
         plan: true,
       },
-    })
-    
-    console.log('🔍 Debug - Assinatura encontrada:', activeSubscription)
+    });
+
+    console.log("🔍 Debug - Assinatura encontrada:", activeSubscription);
 
     // Se não tem assinatura ativa, não pode baixar
     if (!activeSubscription) {
       return {
         canDownload: false,
-        reason: 'Usuário não possui assinatura ativa',
+        reason: "Usuário não possui assinatura ativa",
         dailyDownloads: 0,
         monthlyDownloads: 0,
         dailyLimit: 0,
         monthlyLimit: 0,
         remainingDaily: 0,
         remainingMonthly: 0,
-      }
+      };
     }
 
     // Todos os planos têm 5 downloads por dia
-    const dailyLimit = 5
-    const monthlyLimit = 150 // 5 * 30 dias
+    const dailyLimit = 5;
+    const monthlyLimit = 150; // 5 * 30 dias
 
     // Calcular downloads do dia atual
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const dailyDownloads = await prisma.downloadLog.count({
       where: {
         userId,
@@ -68,11 +70,11 @@ export async function checkDownloadPermission(userId: string): Promise<DownloadP
           gte: today,
         },
       },
-    })
+    });
 
     // Calcular downloads do mês atual
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-    
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
     const monthlyDownloads = await prisma.downloadLog.count({
       where: {
         userId,
@@ -80,36 +82,37 @@ export async function checkDownloadPermission(userId: string): Promise<DownloadP
           gte: firstDayOfMonth,
         },
       },
-    })
+    });
 
-    const remainingDaily = Math.max(0, dailyLimit - dailyDownloads)
-    const remainingMonthly = Math.max(0, monthlyLimit - monthlyDownloads)
+    const remainingDaily = Math.max(0, dailyLimit - dailyDownloads);
+    const remainingMonthly = Math.max(0, monthlyLimit - monthlyDownloads);
 
     // Verificar se pode baixar
-    const canDownload = dailyDownloads < dailyLimit && monthlyDownloads < monthlyLimit
+    const canDownload =
+      dailyDownloads < dailyLimit && monthlyDownloads < monthlyLimit;
 
     return {
       canDownload,
-      reason: canDownload ? undefined : 'Limite de downloads atingido',
+      reason: canDownload ? undefined : "Limite de downloads atingido",
       dailyDownloads,
       monthlyDownloads,
       dailyLimit,
       monthlyLimit,
       remainingDaily,
       remainingMonthly,
-    }
+    };
   } catch (error) {
-    console.error('Erro ao verificar permissão de download:', error)
+    console.error("Erro ao verificar permissão de download:", error);
     return {
       canDownload: false,
-      reason: 'Erro ao verificar permissões',
+      reason: "Erro ao verificar permissões",
       dailyDownloads: 0,
       monthlyDownloads: 0,
       dailyLimit: 0,
       monthlyLimit: 0,
       remainingDaily: 0,
       remainingMonthly: 0,
-    }
+    };
   }
 }
 
@@ -125,8 +128,15 @@ export async function logDownload(
   userAgent?: string
 ) {
   try {
-    console.log('🔍 Debug - Tentando registrar download:', { userId, productId, assetType, fileSize, ipAddress, userAgent })
-    
+    console.log("🔍 Debug - Tentando registrar download:", {
+      userId,
+      productId,
+      assetType,
+      fileSize,
+      ipAddress,
+      userAgent,
+    });
+
     await prisma.downloadLog.create({
       data: {
         userId,
@@ -136,39 +146,52 @@ export async function logDownload(
         ipAddress,
         userAgent,
       },
-    })
-    console.log(`✅ Download registrado para usuário ${userId}, produto ${productId}`)
+    });
+    console.log(
+      `✅ Download registrado para usuário ${userId}, produto ${productId}`
+    );
   } catch (error) {
-    console.error('🔍 Debug - Erro ao registrar download:', error)
-    console.error('🔍 Debug - Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
-    throw error
+    console.error("🔍 Debug - Erro ao registrar download:", error);
+    console.error(
+      "🔍 Debug - Stack trace:",
+      error instanceof Error ? error.stack : "No stack trace"
+    );
+    throw error;
   }
 }
 
 /**
  * Verifica se o usuário tem acesso ao produto
  */
-export async function checkProductAccess(userId: string, productId: string): Promise<boolean> {
+export async function checkProductAccess(
+  userId: string,
+  productId: string
+): Promise<boolean> {
   try {
-    console.log('🔍 Debug - Verificando acesso ao produto:', productId, 'para usuário:', userId)
-    
+    console.log(
+      "🔍 Debug - Verificando acesso ao produto:",
+      productId,
+      "para usuário:",
+      userId
+    );
+
     // Verificar se o produto é público
     const product = await prisma.product.findUnique({
       where: { id: productId },
       select: { isPublic: true },
-    })
+    });
 
-    console.log('🔍 Debug - Produto encontrado:', product)
+    console.log("🔍 Debug - Produto encontrado:", product);
 
     if (!product) {
-      console.log('🔍 Debug - Produto não encontrado')
-      return false
+      console.log("🔍 Debug - Produto não encontrado");
+      return false;
     }
 
     // Se o produto é público, qualquer usuário com assinatura pode acessar
     if (product.isPublic) {
-      console.log('🔍 Debug - Produto é público, acesso permitido')
-      return true
+      console.log("🔍 Debug - Produto é público, acesso permitido");
+      return true;
     }
 
     // Se não é público, verificar se o usuário tem entitlements
@@ -180,11 +203,11 @@ export async function checkProductAccess(userId: string, productId: string): Pro
           gte: new Date(), // Não expirado
         },
       },
-    })
+    });
 
-    return !!entitlement
+    return !!entitlement;
   } catch (error) {
-    console.error('Erro ao verificar acesso ao produto:', error)
-    return false
+    console.error("Erro ao verificar acesso ao produto:", error);
+    return false;
   }
-} 
+}
