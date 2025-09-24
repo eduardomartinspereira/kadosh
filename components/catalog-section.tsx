@@ -84,11 +84,13 @@ interface Product {
 interface CatalogSectionProps {
   selectedFileTypes?: string[];
   selectedCategories?: string[];
+  onSearchClick?: () => void;
 }
 
 export default function CatalogSection({
   selectedFileTypes = [],
   selectedCategories = [],
+  onSearchClick,
 }: CatalogSectionProps) {
   const { data: session, status } = useSession();
   const { searchTerm, setSearchTerm, updateSearchFromURL, clearSearch } =
@@ -513,25 +515,33 @@ export default function CatalogSection({
     <section id="catalog" className="py-20 bg-background">
       <div className="container mx-auto px-4">
         {/* Header Section */}
-        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-background py-16 rounded-lg mb-12">
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Catálogo de Produtos
-            </h2>
-            <p className="text-xl text-muted-foreground mb-8">
-              Explore nossa coleção de artes e materiais marcantes para nossos
-              clientes.
-            </p>
+        <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-background py-16 rounded-lg mb-12 overflow-hidden">
+          {/* Background Image */}
+          <div className="absolute inset-0 opacity-20">
+            <Image
+              src="/pesquisa.png"
+              alt="Background"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+
+          {/* Content */}
+          <div className="relative z-10 text-center max-w-3xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6"></h2>
+            <p className="text-xl text-muted-foreground mb-8"></p>
 
             {/* Barra de Pesquisa Centralizada */}
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-2xl mx-auto mt-24">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Buscar produtos..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-background/80 border-border/50 focus:border-primary"
+                  onClick={onSearchClick}
+                  className="pl-10 bg-background/80 border-border/50 focus:border-primary cursor-pointer"
                 />
               </div>
             </div>

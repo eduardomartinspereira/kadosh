@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mercadoPagoService } from '../../../lib/mercadopago';
 import { sendPaymentConfirmationEmail, sendPaymentRejectedEmail } from '../../../lib/mailer';
+import { prisma } from '../../../lib/prisma';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -140,7 +141,6 @@ export async function POST(req: NextRequest) {
   let webhookEvent: any = null;
   
   try {
-    // Por enquanto, vamos apenas logar os dados sem salvar no banco
     console.log('[WEBHOOK] 📊 Dados do pagamento recebidos:', {
       id: details.id,
       status: details.status,
@@ -149,7 +149,44 @@ export async function POST(req: NextRequest) {
       payer: details.payer,
     });
     
-    // TODO: Implementar salvamento no banco quando o schema estiver compatível
+    // Buscar pagamento existente pelo providerPaymentId
+    const existingPayment = await prisma.payment.findFirst({
+      where: {
+        providerPaymentId: String(details.id)
+      }
+    });
+
+    if (existingPayment) {
+      // Atualizar pagamento existente
+      console.log('[WEBHOOK] 🔄 Atualizando pagamento existente:', existingPayment.id);
+      
+      dbPayment = await prisma.payment.update({
+        where: { id: existingPayment.id },
+        data: {
+          status: details.status.toUpperCase() as any,
+          paidAt: details.status === 'approved' ? new Date() : null,
+          providerPaymentId: String(details.id),
+          amountCents: Math.round((details.transaction_amount || 0) * 100),
+          providerRaw: details,
+        }
+      });
+      
+      console.log('[WEBHOOK] ✅ Pagamento atualizado:', {
+        id: dbPayment.id,
+        status: dbPayment.status,
+        paidAt: dbPayment.paidAt
+      });
+    } else {
+      // Para criar um novo pagamento, precisamos de um invoiceId
+      // Por enquanto, vamos apenas logar que não conseguimos criar
+      console.log('[WEBHOOK] ⚠️ Pagamento não encontrado e não é possível criar sem invoiceId');
+      console.log('[WEBHOOK] 📊 Dados do pagamento:', {
+        id: details.id,
+        status: details.status,
+        external_reference: details.external_reference,
+        transaction_amount: details.transaction_amount
+      });
+    }
     
   } catch (dbError) {
     console.error('[WEBHOOK] ❌ Erro ao processar dados:', dbError);

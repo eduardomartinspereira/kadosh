@@ -24,7 +24,7 @@ import LeftSidebar from "@/components/left-sidebar";
 
 export default function HomePage() {
   // Estados para sidebar
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
   const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [categories, setCategories] = useState<
@@ -128,6 +128,7 @@ export default function HomePage() {
         <CatalogSection
           selectedFileTypes={selectedFileTypes}
           selectedCategories={selectedCategories}
+          onSearchClick={() => setIsLeftSidebarOpen(true)}
         />
 
         {/* Services/Products Section */}

@@ -161,6 +161,38 @@ export async function logDownload(
 }
 
 /**
+ * Verifica se o usuário já baixou um produto específico
+ */
+export async function hasUserDownloadedProduct(
+  userId: string,
+  productId: string
+): Promise<boolean> {
+  try {
+    console.log(
+      "🔍 Debug - Verificando se usuário já baixou produto:",
+      productId,
+      "para usuário:",
+      userId
+    );
+
+    const existingDownload = await prisma.downloadLog.findFirst({
+      where: {
+        userId,
+        productId,
+      },
+    });
+
+    const hasDownloaded = !!existingDownload;
+    console.log("🔍 Debug - Usuário já baixou o produto:", hasDownloaded);
+
+    return hasDownloaded;
+  } catch (error) {
+    console.error("Erro ao verificar download existente:", error);
+    return false;
+  }
+}
+
+/**
  * Verifica se o usuário tem acesso ao produto
  */
 export async function checkProductAccess(

@@ -526,13 +526,8 @@ export default function CatalogPage() {
         <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-background py-16">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-                Catálogo de Produtos
-              </h1>
-              <p className="text-xl text-muted-foreground mb-8">
-                Explore nossa coleção de artes e materiais marcantes para nossos
-                clientes.
-              </p>
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6"></h1>
+              <p className="text-xl text-muted-foreground mb-8"></p>
             </div>
           </div>
         </div>

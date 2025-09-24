@@ -6,6 +6,7 @@ import {
   checkDownloadPermission,
   logDownload,
   checkProductAccess,
+  hasUserDownloadedProduct,
 } from "../../../../../lib/download-permissions";
 
 export async function GET(
@@ -74,7 +75,30 @@ export async function GET(
       );
     }
 
-    // Verificar permissões de download
+    // Verificar se o usuário já baixou este produto
+    console.log(
+      "🔍 Debug PSD API - Verificando se usuário já baixou o produto..."
+    );
+    const hasDownloaded = await hasUserDownloadedProduct(userId, id);
+    console.log("🔍 Debug PSD API - hasDownloaded:", hasDownloaded);
+
+    if (hasDownloaded) {
+      // Se já baixou, permitir download sem contabilizar novamente
+      console.log(
+        "🔍 Debug PSD API - Usuário já baixou este produto, permitindo download sem contabilizar"
+      );
+
+      // Retornar o arquivo para download sem registrar no log
+      return NextResponse.json({
+        success: true,
+        downloadUrl: product.arquivoPdf,
+        fileName: `${product.name}.psd`,
+        message: "Download autorizado (já contabilizado anteriormente)",
+        alreadyDownloaded: true,
+      });
+    }
+
+    // Verificar permissões de download apenas se não baixou antes
     console.log("🔍 Debug PSD API - Verificando permissões de download...");
     const permission = await checkDownloadPermission(userId);
     console.log("🔍 Debug PSD API - permission:", permission);
