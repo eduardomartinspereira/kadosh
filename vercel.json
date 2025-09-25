@@ -10,8 +10,7 @@
   "crons": [
     {
       "path": "/api/cron/reset-daily-downloads",
-      "schedule": "0 0 * * *",
-      "timezone": "America/Sao_Paulo"
+      "schedule": "0 3 * * *"
     }
   ],
   "env": {
