@@ -24,10 +24,40 @@ export function Header() {
     if (session?.user) {
       const fetchDownloadStatus = async () => {
         try {
+          console.log("🔍 Header - Buscando status de downloads...");
           const response = await fetch("/api/downloads/status");
           if (response.ok) {
             const data = await response.json();
-            setDownloadStatus(data.data);
+            console.log("🔍 Header - Dados recebidos:", data);
+            console.log("🔍 Header - Tipo de data:", typeof data);
+            console.log("🔍 Header - data.data:", data.data);
+            console.log("🔍 Header - Tipo de data.data:", typeof data.data);
+            console.log(
+              "🔍 Header - data.data.subscription:",
+              data.data?.subscription
+            );
+            console.log(
+              "🔍 Header - data.data.subscription?.status:",
+              data.data?.subscription?.status
+            );
+
+            // Verificar se data.data é um objeto válido
+            if (data.data && typeof data.data === "object") {
+              setDownloadStatus(data.data);
+            } else {
+              console.error(
+                "🔍 Header - data.data não é um objeto válido:",
+                data.data
+              );
+              setDownloadStatus(null);
+            }
+          } else {
+            console.error(
+              "🔍 Header - Erro na resposta:",
+              response.status,
+              response.statusText
+            );
+            setDownloadStatus(null);
           }
         } catch (error) {
           console.error("Erro ao buscar status de downloads:", error);
@@ -99,19 +129,31 @@ export function Header() {
               </Button>
 
               {/* Botão Seja Premium - só aparece se não tiver assinatura ativa */}
-              {!downloadStatus?.subscription?.status ||
-              (downloadStatus.subscription.status !== "ACTIVE" &&
-                downloadStatus.subscription.status !== "TRIALING") ? (
-                <Button
-                  asChild
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-                >
-                  <Link href="/plans">
-                    <Star className="h-4 w-4 mr-2" />
-                    Seja Premium
-                  </Link>
-                </Button>
-              ) : null}
+              {(() => {
+                const shouldShow =
+                  !downloadStatus?.subscription?.status ||
+                  (downloadStatus.subscription.status !== "ACTIVE" &&
+                    downloadStatus.subscription.status !== "TRIALING");
+
+                console.log("🔍 Header - Lógica do botão Seja Premium:", {
+                  downloadStatus: !!downloadStatus,
+                  subscription: downloadStatus?.subscription,
+                  status: downloadStatus?.subscription?.status,
+                  shouldShow,
+                });
+
+                return shouldShow ? (
+                  <Button
+                    asChild
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                  >
+                    <Link href="/plans">
+                      <Star className="h-4 w-4 mr-2" />
+                      Seja Premium
+                    </Link>
+                  </Button>
+                ) : null;
+              })()}
             </div>
           ) : (
             <div className="flex items-center gap-3">

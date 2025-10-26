@@ -31,7 +31,7 @@ export async function checkDownloadPermission(
           in: ["ACTIVE", "TRIALING"], // Incluir TRIALING também
         },
         currentPeriodEnd: {
-          gte: new Date(), // Assinatura ainda válida
+          gt: new Date(), // Assinatura ainda válida
         },
       },
       include: {

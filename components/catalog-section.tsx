@@ -85,23 +85,48 @@ interface CatalogSectionProps {
   selectedFileTypes?: string[];
   selectedCategories?: string[];
   onSearchClick?: () => void;
+  onSearch?: (searchTerm: string) => void;
+  searchTerm?: string;
 }
 
 export default function CatalogSection({
   selectedFileTypes = [],
   selectedCategories = [],
   onSearchClick,
+  onSearch,
+  searchTerm: propSearchTerm,
 }: CatalogSectionProps) {
   const { data: session, status } = useSession();
-  const { searchTerm, setSearchTerm, updateSearchFromURL, clearSearch } =
-    useSearch();
+  const {
+    searchTerm: contextSearchTerm,
+    setSearchTerm,
+    updateSearchFromURL,
+    clearSearch,
+  } = useSearch();
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [localSearchTerm, setLocalSearchTerm] = useState("");
+
+  // Usar o termo de pesquisa da prop se disponível, senão usar o contexto
+  const searchTerm = propSearchTerm || contextSearchTerm;
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloadStatus, setDownloadStatus] = useState<any>(null);
+
+  // Função para lidar com a pesquisa
+  const handleSearch = () => {
+    if (onSearch) {
+      onSearch(localSearchTerm);
+    } else {
+      setSearchTerm(localSearchTerm);
+    }
+    // Abrir sidebar de filtros quando pesquisar
+    if (onSearchClick) {
+      onSearchClick();
+    }
+  };
 
   // Processar parâmetros de URL para pesquisa
   useEffect(() => {
@@ -517,7 +542,7 @@ export default function CatalogSection({
         {/* Header Section */}
         <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-background py-16 rounded-lg mb-12 overflow-hidden">
           {/* Background Image */}
-          <div className="absolute inset-0 opacity-20">
+          <div className="absolute inset-0 ">
             <Image
               src="/pesquisa.png"
               alt="Background"
@@ -534,15 +559,21 @@ export default function CatalogSection({
 
             {/* Barra de Pesquisa Centralizada */}
             <div className="max-w-2xl mx-auto mt-24">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Buscar produtos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onClick={onSearchClick}
-                  className="pl-10 bg-background/80 border-border/50 focus:border-primary cursor-pointer"
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Buscar produtos..."
+                    value={localSearchTerm}
+                    onChange={(e) => setLocalSearchTerm(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                    className="pl-10 bg-background/80 border-border/50 focus:border-primary"
+                  />
+                </div>
+                <Button onClick={handleSearch} className="px-6">
+                  <Search className="h-4 w-4 mr-2" />
+                  Pesquisar
+                </Button>
               </div>
             </div>
           </div>

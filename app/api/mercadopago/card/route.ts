@@ -87,7 +87,7 @@ function mapStatuses(mpStatus: string): {
   }
 }
 
-// Upsert de usuário (sem plano/assinatura)
+// Upsert de usuário (sem plano/assinatura) com tolerância a conflito de CPF
 async function ensureUser(
   payerEmail: string,
   payerCpfCnpj?: string,
@@ -96,21 +96,51 @@ async function ensureUser(
   const email = payerEmail.trim().toLowerCase();
   const cpf = (payerCpfCnpj || "").replace(/\D/g, "") || null;
 
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: cpf ? { cpf } : {},
-    create: {
-      email,
-      name: payerName || null,
-      cpf: cpf || null,
-      role: "CUSTOMER",
-    },
-  });
+  // 1) Tenta localizar por email primeiro
+  const existingByEmail = await prisma.user.findUnique({ where: { email } });
 
-  return user;
+  if (existingByEmail) {
+    // Atualiza CPF somente se necessário; ignora conflito de unicidade
+    if (cpf && existingByEmail.cpf !== cpf) {
+      try {
+        return await prisma.user.update({ where: { email }, data: { cpf } });
+      } catch (e: any) {
+        // Se o CPF já pertence a outro usuário (P2002), seguimos sem atualizar o CPF
+        if (e?.code === "P2002") {
+          return existingByEmail;
+        }
+        throw e;
+      }
+    }
+    return existingByEmail;
+  }
+
+  // 2) Não existe por email: tenta criar com CPF; se conflitar, cria sem CPF
+  try {
+    return await prisma.user.create({
+      data: {
+        email,
+        name: payerName || null,
+        cpf: cpf || null,
+        role: "CUSTOMER",
+      },
+    });
+  } catch (e: any) {
+    if (e?.code === "P2002") {
+      // Conflito no CPF: cria o usuário sem CPF
+      return await prisma.user.create({
+        data: {
+          email,
+          name: payerName || null,
+          role: "CUSTOMER",
+        },
+      });
+    }
+    throw e;
+  }
 }
 
-// Persiste SEMPRE Order → Invoice → Payment (sem Subscription/Plan)
+// Persiste SEMPRE Order → Invoice → Payment (e cria Subscription quando aprovado)
 async function persistCardPayment(args: {
   mpData: any;
   amount: number;
@@ -185,6 +215,59 @@ async function persistCardPayment(args: {
         providerRaw: mpData as any,
       },
     });
+
+    // Se pagamento aprovado/authorized, criar Subscription ativa
+    if (isPaid) {
+      // Determinar período: R$ 290+ = YEARLY, senão MONTHLY
+      const isYearly = amount >= 290;
+
+      // Tentar localizar por billingPeriod prioritariamente
+      let plan = await tx.plan.findFirst({
+        where: { billingPeriod: isYearly ? "YEARLY" : "MONTHLY" },
+        orderBy: { priceCents: "asc" },
+      });
+
+      // Fallback por slug conhecido (professional como mensal)
+      if (!plan && !isYearly) {
+        plan = await tx.plan.findUnique({ where: { slug: "professional" } });
+      }
+
+      if (plan) {
+        const periodDays = isYearly ? 365 : 30;
+        const subscription = await tx.subscription.create({
+          data: {
+            userId: user.id,
+            planId: plan.id,
+            status: "ACTIVE",
+            paymentMethod: "CARD",
+            provider,
+            providerSubscriptionId: providerPaymentId,
+            startAt: now,
+            currentPeriodStart: now,
+            currentPeriodEnd: new Date(
+              now.getTime() + periodDays * 24 * 60 * 60 * 1000
+            ),
+          },
+        });
+
+        // Vincular o pedido à subscription
+        await tx.order.update({
+          where: { id: order.id },
+          data: {
+            subscriptionId: subscription.id,
+            type: "SUBSCRIPTION_INITIAL",
+          },
+        });
+
+        return {
+          user,
+          order: { ...order, subscriptionId: subscription.id },
+          invoice,
+          payment,
+        };
+      }
+      // Caso não exista o plano, apenas prosseguir sem subscription
+    }
 
     return { user, order, invoice, payment };
   });

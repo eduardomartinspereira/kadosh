@@ -229,6 +229,8 @@ export default function CatalogPage() {
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     setPagination((prev) => ({ ...prev, page: 1 })); // Reset para primeira página
+    // Abrir sidebar de filtros quando pesquisar
+    setIsLeftSidebarOpen(true);
   };
 
   const handleCategoryChange = (value: string) => {
@@ -538,14 +540,26 @@ export default function CatalogPage() {
             <div className="flex flex-col md:flex-row gap-4">
               {/* Search Input */}
               <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform color -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Buscar produtos..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="pl-10"
-                  />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      placeholder="Buscar produtos..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && handleSearch(searchTerm)
+                      }
+                      className="pl-10"
+                    />
+                  </div>
+                  <Button
+                    onClick={() => handleSearch(searchTerm)}
+                    className="px-6"
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    Pesquisar
+                  </Button>
                 </div>
               </div>
 

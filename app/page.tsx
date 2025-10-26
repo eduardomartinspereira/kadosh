@@ -31,6 +31,7 @@ export default function HomePage() {
     Array<{ id: string; name: string }>
   >([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Funções para controlar filtros
   const toggleFileType = (fileType: string) => {
@@ -129,6 +130,11 @@ export default function HomePage() {
           selectedFileTypes={selectedFileTypes}
           selectedCategories={selectedCategories}
           onSearchClick={() => setIsLeftSidebarOpen(true)}
+          onSearch={(searchTerm) => {
+            // Pesquisar localmente na página principal
+            setSearchTerm(searchTerm);
+          }}
+          searchTerm={searchTerm}
         />
 
         {/* Services/Products Section */}
