@@ -1,33 +1,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // app/api/webhook/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { mercadoPagoService } from '../../../lib/mercadopago';
-import { sendPaymentConfirmationEmail, sendPaymentRejectedEmail } from '../../../lib/mailer';
-import { prisma } from '../../../lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { mercadoPagoService } from "../../../lib/mercadopago";
+import {
+  sendPaymentConfirmationEmail,
+  sendPaymentRejectedEmail,
+} from "../../../lib/mailer";
+import { prisma } from "../../../lib/prisma";
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-  
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 // Função para traduzir códigos de erro do Mercado Pago
 function getRejectionReason(statusDetail: string): string {
   const rejectionReasons: { [key: string]: string } = {
-    'cc_rejected_bad_filled_date': 'Data de validade incorreta',
-    'cc_rejected_bad_filled_other': 'Dados do cartão incorretos',
-    'cc_rejected_bad_filled_security_code': 'Código de segurança incorreto',
-    'cc_rejected_blacklist': 'Cartão bloqueado',
-    'cc_rejected_call_for_authorize': 'Cartão requer autorização',
-    'cc_rejected_card_disabled': 'Cartão desabilitado',
-    'cc_rejected_card_error': 'Erro no cartão',
-    'cc_rejected_duplicated_payment': 'Pagamento duplicado',
-    'cc_rejected_high_risk': 'Pagamento rejeitado por risco',
-    'cc_rejected_insufficient_amount': 'Saldo insuficiente',
-    'cc_rejected_invalid_installments': 'Parcelamento inválido',
-    'cc_rejected_max_attempts': 'Máximo de tentativas excedido',
-    'cc_rejected_other_reason': 'Cartão recusado',
-    'cc_rejected_bad_filled_card_number': 'Número do cartão incorreto',
+    cc_rejected_bad_filled_date: "Data de validade incorreta",
+    cc_rejected_bad_filled_other: "Dados do cartão incorretos",
+    cc_rejected_bad_filled_security_code: "Código de segurança incorreto",
+    cc_rejected_blacklist: "Cartão bloqueado",
+    cc_rejected_call_for_authorize: "Cartão requer autorização",
+    cc_rejected_card_disabled: "Cartão desabilitado",
+    cc_rejected_card_error: "Erro no cartão",
+    cc_rejected_duplicated_payment: "Pagamento duplicado",
+    cc_rejected_high_risk: "Pagamento rejeitado por risco",
+    cc_rejected_insufficient_amount: "Saldo insuficiente",
+    cc_rejected_invalid_installments: "Parcelamento inválido",
+    cc_rejected_max_attempts: "Máximo de tentativas excedido",
+    cc_rejected_other_reason: "Cartão recusado",
+    cc_rejected_bad_filled_card_number: "Número do cartão incorreto",
   };
 
-  return rejectionReasons[statusDetail] || 'Pagamento recusado pelo banco';
+  return rejectionReasons[statusDetail] || "Pagamento recusado pelo banco";
 }
 
 // --- Utils -------------------------------------------------------------------
@@ -38,8 +41,8 @@ function isValidEmail(email?: string | null) {
   const e = String(email).trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return false;
   // evita placeholders
-  if (e.endsWith('@example.com')) return false;
-  if (e === 'cliente@example.com' || e === 'cliente@exemplo.com') return false;
+  if (e.endsWith("@example.com")) return false;
+  if (e === "cliente@example.com" || e === "cliente@exemplo.com") return false;
   return true;
 }
 
@@ -55,7 +58,7 @@ function pickName(details: any): string | undefined {
   const fromPayer =
     [details?.payer?.first_name, details?.payer?.last_name]
       .filter(Boolean)
-      .join(' ')
+      .join(" ")
       .trim() || undefined;
   return fromPayer || details?.metadata?.customer_name || undefined;
 }
@@ -84,32 +87,47 @@ function wasRecentlySent(id: string, ms = 5 * 60 * 1000) {
 // --- Handlers ----------------------------------------------------------------
 export async function POST(req: NextRequest) {
   let body: any = null;
-  try { body = await req.json(); } catch { body = null; }
+  try {
+    body = await req.json();
+  } catch {
+    body = null;
+  }
 
   const url = new URL(req.url);
   const type =
     body?.type ||
     body?.action ||
-    url.searchParams.get('type') ||
-    url.searchParams.get('topic') ||
-    url.searchParams.get('action') ||
-    '';
+    url.searchParams.get("type") ||
+    url.searchParams.get("topic") ||
+    url.searchParams.get("action") ||
+    "";
 
   const paymentId =
     body?.data?.id ||
-    url.searchParams.get('data.id') ||
-    url.searchParams.get('id') ||
+    url.searchParams.get("data.id") ||
+    url.searchParams.get("id") ||
     null;
 
-  console.log('[WEBHOOK] ▶️ recebido', { type, paymentId, qs: Object.fromEntries(url.searchParams.entries()) });
+  console.log("[WEBHOOK] ▶️ recebido", {
+    type,
+    paymentId,
+    qs: Object.fromEntries(url.searchParams.entries()),
+  });
 
   // Ignora eventos que não são de pagamento
-  const isPayment = (typeof type === 'string' && type.includes('payment')) || !!paymentId;
+  const isPayment =
+    (typeof type === "string" && type.includes("payment")) || !!paymentId;
   if (!isPayment) {
-    return NextResponse.json({ ok: true, message: 'ignorado (não é payment)' }, { status: 200 });
+    return NextResponse.json(
+      { ok: true, message: "ignorado (não é payment)" },
+      { status: 200 }
+    );
   }
   if (!paymentId) {
-    return NextResponse.json({ ok: false, message: 'paymentId ausente' }, { status: 200 });
+    return NextResponse.json(
+      { ok: false, message: "paymentId ausente" },
+      { status: 200 }
+    );
   }
 
   // Busca detalhes com backoff leve (propagação do MP pode demorar alguns ms)
@@ -125,11 +143,14 @@ export async function POST(req: NextRequest) {
     }
   }
   if (!details) {
-    console.error('[WEBHOOK] ❌ sem detalhes do pagamento', paymentId);
-    return NextResponse.json({ ok: false, message: 'sem detalhes' }, { status: 200 });
+    console.error("[WEBHOOK] ❌ sem detalhes do pagamento", paymentId);
+    return NextResponse.json(
+      { ok: false, message: "sem detalhes" },
+      { status: 200 }
+    );
   }
 
-  console.log('[WEBHOOK] ℹ️ detalhes', {
+  console.log("[WEBHOOK] ℹ️ detalhes", {
     id: details.id,
     status: details.status,
     status_detail: (details as any).status_detail,
@@ -139,66 +160,103 @@ export async function POST(req: NextRequest) {
   // === SALVAR/ATUALIZAR NO BANCO DE DADOS ===
   let dbPayment: any = null;
   let webhookEvent: any = null;
-  
+
   try {
-    console.log('[WEBHOOK] 📊 Dados do pagamento recebidos:', {
+    console.log("[WEBHOOK] 📊 Dados do pagamento recebidos:", {
       id: details.id,
       status: details.status,
       external_reference: details.external_reference,
       transaction_amount: details.transaction_amount,
       payer: details.payer,
     });
-    
+
     // Buscar pagamento existente pelo providerPaymentId
     const existingPayment = await prisma.payment.findFirst({
       where: {
-        providerPaymentId: String(details.id)
-      }
+        providerPaymentId: String(details.id),
+      },
     });
 
     if (existingPayment) {
       // Atualizar pagamento existente
-      console.log('[WEBHOOK] 🔄 Atualizando pagamento existente:', existingPayment.id);
-      
+      console.log(
+        "[WEBHOOK] 🔄 Atualizando pagamento existente:",
+        existingPayment.id
+      );
+
       dbPayment = await prisma.payment.update({
         where: { id: existingPayment.id },
         data: {
           status: details.status.toUpperCase() as any,
-          paidAt: details.status === 'approved' ? new Date() : null,
+          paidAt: details.status === "approved" ? new Date() : null,
           providerPaymentId: String(details.id),
           amountCents: Math.round((details.transaction_amount || 0) * 100),
           providerRaw: details,
-        }
+        },
       });
-      
-      console.log('[WEBHOOK] ✅ Pagamento atualizado:', {
+
+      console.log("[WEBHOOK] ✅ Pagamento atualizado:", {
         id: dbPayment.id,
         status: dbPayment.status,
-        paidAt: dbPayment.paidAt
+        paidAt: dbPayment.paidAt,
       });
+
+      // Se aprovado, também atualizar Invoice, Order e Subscription
+      if (details.status === "approved") {
+        try {
+          const invoice = await prisma.invoice.update({
+            where: { id: dbPayment.invoiceId },
+            data: { status: "PAID" },
+          });
+
+          const order = await prisma.order.update({
+            where: { id: invoice.orderId },
+            data: { status: "PAID" },
+          });
+
+          if (order.subscriptionId) {
+            await prisma.subscription.update({
+              where: { id: order.subscriptionId },
+              data: { status: "ACTIVE" },
+            });
+          }
+
+          console.log(
+            "[WEBHOOK] ✅ Entidades vinculadas atualizadas (invoice, order, subscription)"
+          );
+        } catch (linkErr) {
+          console.error(
+            "[WEBHOOK] ⚠️ Falha ao atualizar entidades vinculadas:",
+            linkErr
+          );
+        }
+      }
     } else {
       // Para criar um novo pagamento, precisamos de um invoiceId
       // Por enquanto, vamos apenas logar que não conseguimos criar
-      console.log('[WEBHOOK] ⚠️ Pagamento não encontrado e não é possível criar sem invoiceId');
-      console.log('[WEBHOOK] 📊 Dados do pagamento:', {
+      console.log(
+        "[WEBHOOK] ⚠️ Pagamento não encontrado e não é possível criar sem invoiceId"
+      );
+      console.log("[WEBHOOK] 📊 Dados do pagamento:", {
         id: details.id,
         status: details.status,
         external_reference: details.external_reference,
-        transaction_amount: details.transaction_amount
+        transaction_amount: details.transaction_amount,
       });
     }
-    
   } catch (dbError) {
-    console.error('[WEBHOOK] ❌ Erro ao processar dados:', dbError);
+    console.error("[WEBHOOK] ❌ Erro ao processar dados:", dbError);
     // Continuar processamento mesmo com erro
   }
 
   // Atualize seu banco aqui (pelo external_reference / id), se desejar.
 
   // Envia e-mail somente quando aprovado
-  if (details.status === 'approved') {
+  if (details.status === "approved") {
     if (wasRecentlySent(String(details.id))) {
-      console.log('[WEBHOOK] ⏭️ e-mail já enviado recentemente, ignorando duplicado');
+      console.log(
+        "[WEBHOOK] ⏭️ e-mail já enviado recentemente, ignorando duplicado"
+      );
     } else {
       const to = pickBuyerEmail(details);
       const name = pickName(details);
@@ -208,9 +266,16 @@ export async function POST(req: NextRequest) {
         String(details.id);
       const items = pickItems(details);
       const amount = Number(details?.transaction_amount || 0);
-      const receiptUrl = details?.point_of_interaction?.transaction_data?.ticket_url ?? undefined;
+      const receiptUrl =
+        details?.point_of_interaction?.transaction_data?.ticket_url ??
+        undefined;
 
-      console.log('[WEBHOOK] 📧 preparando e-mail', { to, orderId, amount, items: items.length });
+      console.log("[WEBHOOK] 📧 preparando e-mail", {
+        to,
+        orderId,
+        amount,
+        items: items.length,
+      });
 
       if (to) {
         try {
@@ -219,39 +284,47 @@ export async function POST(req: NextRequest) {
             name,
             orderId,
             amount,
-            description: items.length > 0 ? items[0].title : 'Pagamento',
+            description: items.length > 0 ? items[0].title : "Pagamento",
             receiptUrl,
           });
-          
+
           if (emailSent) {
             markSent(String(details.id));
-            console.log('[WEBHOOK] ✅ e-mail enviado', {
+            console.log("[WEBHOOK] ✅ e-mail enviado", {
               to,
               orderId,
             });
           } else {
-            console.log('[WEBHOOK] ⚠️ Email não foi enviado (configuração SMTP ausente)');
+            console.log(
+              "[WEBHOOK] ⚠️ Email não foi enviado (configuração SMTP ausente)"
+            );
           }
         } catch (err) {
-          console.error('[WEBHOOK] ❌ falha ao enviar e-mail', err);
+          console.error("[WEBHOOK] ❌ falha ao enviar e-mail", err);
         }
       } else {
-        console.warn('[WEBHOOK] ⚠️ e-mail do comprador não encontrado/é placeholder — não enviado');
+        console.warn(
+          "[WEBHOOK] ⚠️ e-mail do comprador não encontrado/é placeholder — não enviado"
+        );
       }
     }
   }
 
   // === Enviar email se o pagamento foi recusado ===
-  if (details.status === 'rejected') {
+  if (details.status === "rejected") {
     if (wasRecentlySent(String(details.id))) {
-      console.log('[WEBHOOK] ⏭️ e-mail de recusa já enviado recentemente, ignorando duplicado');
+      console.log(
+        "[WEBHOOK] ⏭️ e-mail de recusa já enviado recentemente, ignorando duplicado"
+      );
     } else {
       const to = details.payer?.email;
-      const name = details.payer?.name || 'Cliente';
+      const name = details.payer?.name || "Cliente";
       const orderId = details.external_reference || String(details.id);
       const amount = details.transaction_amount || 0;
       const items = details.additional_info?.items || [];
-      const rejectionReason = getRejectionReason(details.status_detail || 'cc_rejected_other_reason');
+      const rejectionReason = getRejectionReason(
+        details.status_detail || "cc_rejected_other_reason"
+      );
 
       if (to) {
         try {
@@ -260,32 +333,36 @@ export async function POST(req: NextRequest) {
             name,
             orderId,
             amount,
-            description: items.length > 0 ? items[0].title : 'Pagamento',
+            description: items.length > 0 ? items[0].title : "Pagamento",
             rejectionReason,
             statusDetail: details.status_detail,
           });
 
           if (emailSent) {
             markSent(String(details.id));
-            console.log('[WEBHOOK] ✅ e-mail de recusa enviado', {
+            console.log("[WEBHOOK] ✅ e-mail de recusa enviado", {
               to,
               orderId,
               rejectionReason,
             });
           } else {
-            console.log('[WEBHOOK] ⚠️ Email de recusa não foi enviado (configuração SMTP ausente)');
+            console.log(
+              "[WEBHOOK] ⚠️ Email de recusa não foi enviado (configuração SMTP ausente)"
+            );
           }
         } catch (err) {
-          console.error('[WEBHOOK] ❌ falha ao enviar e-mail de recusa', err);
+          console.error("[WEBHOOK] ❌ falha ao enviar e-mail de recusa", err);
         }
       } else {
-        console.warn('[WEBHOOK] ⚠️ e-mail do comprador não encontrado/é placeholder — email de recusa não enviado');
+        console.warn(
+          "[WEBHOOK] ⚠️ e-mail do comprador não encontrado/é placeholder — email de recusa não enviado"
+        );
       }
     }
   }
 
   // Marcar webhook como processado
-  console.log('[WEBHOOK] ✅ Webhook processado com sucesso');
+  console.log("[WEBHOOK] ✅ Webhook processado com sucesso");
 
   return NextResponse.json(
     {
@@ -303,7 +380,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   return NextResponse.json({
-    status: 'ok',
+    status: "ok",
     ts: new Date().toISOString(),
     echo: Object.fromEntries(searchParams.entries()),
   });
