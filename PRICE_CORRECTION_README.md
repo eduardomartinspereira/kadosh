@@ -7,6 +7,7 @@ O plano "Profissional" estava sendo exibido com o valor incorreto de **R$ 197,00
 ## ✅ **Correções Implementadas:**
 
 ### **1. Arquivo `app/checkout/page.tsx`:**
+
 ```typescript
 // ANTES (Incorreto)
 professional: {
@@ -22,6 +23,7 @@ professional: {
 ```
 
 ### **2. Arquivo `app/plans/page.tsx`:**
+
 ```typescript
 // ANTES (Incorreto)
 {
@@ -37,22 +39,25 @@ professional: {
 ```
 
 ### **3. Plano Padrão Corrigido:**
+
 ```typescript
 // ANTES (Incorreto)
-const planId = (searchParams.get('plan') || 'basic').toLowerCase();
+const planId = (searchParams.get("plan") || "basic").toLowerCase();
 
 // DEPOIS (Correto)
-const planId = (searchParams.get('plan') || 'professional').toLowerCase();
+const planId = (searchParams.get("plan") || "professional").toLowerCase();
 ```
 
 ## 🎯 **Valores Finais Corretos:**
 
 ### **Plano Profissional:**
+
 - **Mensal:** R$ 35,00
 - **Anual:** R$ 350,00 (economia de R$ 70,00 por ano)
 
 ### **Recursos Inclusos:**
-- ✅ Acesso completo ao catálogo
+
+- ✅ Até 5 downloads por dia
 - ✅ 5 downloads por dia
 - ✅ Suporte prioritário
 - ✅ Templates premium
@@ -63,6 +68,7 @@ const planId = (searchParams.get('plan') || 'professional').toLowerCase();
 ## 🔧 **Arquivos Modificados:**
 
 1. **`app/checkout/page.tsx`**
+
    - Preço mensal: 197 → 35
    - Preço anual: 1970 → 350
    - Plano padrão: basic → professional
@@ -97,4 +103,4 @@ Economia = R$ 420 - R$ 350 = R$ 70,00 por ano
 
 **Agora o plano Profissional está com o preço correto de R$ 35,00!** 🚀
 
-Os usuários verão o valor correto tanto na página de planos quanto na página de checkout. 
+Os usuários verão o valor correto tanto na página de planos quanto na página de checkout.

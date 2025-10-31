@@ -41,23 +41,13 @@ export async function GET(
 
     const userId = (session.user as any).id as string;
 
-    // Buscar o produto
+    // Buscar o produto (somente campos necessários para Canva)
     const product = await prisma.product.findUnique({
       where: { id },
-      include: {
-        assets: {
-          where: {
-            OR: [
-              { type: "ZIP" },
-              { type: "OTHER" }, // Para arquivos Canva específicos
-            ],
-          },
-        },
-        plans: {
-          include: {
-            plan: true,
-          },
-        },
+      select: {
+        id: true,
+        name: true,
+        linkCanvas: true,
       },
     });
 
@@ -80,24 +70,19 @@ export async function GET(
     // Verificar se o usuário já baixou este produto
     const hasDownloaded = await hasUserDownloadedProduct(userId, id);
     if (hasDownloaded) {
-      // Se já baixou, permitir download sem contabilizar novamente
-      const canvaAsset = product.assets.find(
-        (asset) => asset.type === "ZIP" || asset.type === "OTHER"
-      );
-      if (!canvaAsset) {
+      // Se já baixou, permitir acesso ao link do Canva sem contabilizar novamente
+      if (!product.linkCanvas) {
         return NextResponse.json(
-          { error: "Arquivo Canva não encontrado para este produto" },
+          { error: "Link do Canva não disponível para este produto" },
           { status: 404 }
         );
       }
 
       return NextResponse.json({
         success: true,
-        downloadUrl: canvaAsset.uri,
-        fileName: `${product.name}-canva.${
-          canvaAsset.type === "ZIP" ? "zip" : "zip"
-        }`,
-        message: "Download autorizado (já contabilizado anteriormente)",
+        downloadUrl: product.linkCanvas,
+        fileName: `${product.name}-canva.link`,
+        message: "Acesso autorizado (já contabilizado anteriormente)",
         alreadyDownloaded: true,
       });
     }
@@ -111,13 +96,10 @@ export async function GET(
       );
     }
 
-    // Buscar o arquivo Canva (ZIP ou outro formato)
-    const canvaAsset = product.assets.find(
-      (asset) => asset.type === "ZIP" || asset.type === "OTHER"
-    );
-    if (!canvaAsset) {
+    // Verificar se há link do Canva no produto
+    if (!product.linkCanvas) {
       return NextResponse.json(
-        { error: "Arquivo Canva não encontrado para este produto" },
+        { error: "Link do Canva não disponível para este produto" },
         { status: 404 }
       );
     }
@@ -126,20 +108,18 @@ export async function GET(
     await logDownload(
       userId,
       id,
-      canvaAsset.type,
-      canvaAsset.sizeBytes || undefined,
+      "OTHER", // usamos OTHER para representar acesso ao Canva
+      undefined,
       request.headers.get("x-forwarded-for") || undefined,
       request.headers.get("user-agent") || undefined
     );
 
-    // Retornar o arquivo para download
+    // Retornar sucesso e o link do Canva (frontend abre o link em nova aba)
     return NextResponse.json({
       success: true,
-      downloadUrl: canvaAsset.uri,
-      fileName: `${product.name}-canva.${
-        canvaAsset.type === "ZIP" ? "zip" : "zip"
-      }`,
-      message: "Download autorizado",
+      downloadUrl: product.linkCanvas,
+      fileName: `${product.name}-canva.link`,
+      message: "Acesso autorizado",
       remainingDaily: permission.remainingDaily - 1,
       remainingMonthly: permission.remainingMonthly - 1,
     });
